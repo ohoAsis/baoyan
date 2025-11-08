@@ -12,6 +12,8 @@ import java.time.LocalDateTime;
 @Table(name = "competition_record")
 public class CompetitionRecord {
 
+    int x = 1;
+
     /**
      * 主键ID
      */
