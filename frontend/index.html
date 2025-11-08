@@ -1645,10 +1645,10 @@
             AppState.reviewDecision = 'approved';
             // 通过按钮点击后变淡（绿色500）
             this.classList.remove('bg-green-600', 'hover:bg-green-700');
-            this.classList.add('bg-green-500', 'hover:bg-green-600');
+            this.classList.add('bg-green-300', 'hover:bg-green-400');
             // 驳回按钮恢复正常（红色600）
             const rejectBtn = document.getElementById('review-reject-btn');
-            rejectBtn.classList.remove('bg-red-500', 'hover:bg-red-600');
+            rejectBtn.classList.remove('bg-red-300', 'hover:bg-red-400');
             rejectBtn.classList.add('bg-red-600', 'hover:bg-red-700');
             document.getElementById('review-comment').placeholder = '请填写通过理由（如：材料齐全，符合加分标准）';
         });
@@ -1657,10 +1657,10 @@
             AppState.reviewDecision = 'rejected';
             // 驳回按钮点击后变淡（红色500）
             this.classList.remove('bg-red-600', 'hover:bg-red-700');
-            this.classList.add('bg-red-500', 'hover:bg-red-600');
+            this.classList.add('bg-red-300', 'hover:bg-red-400');
             // 通过按钮恢复正常（绿色600）
             const approveBtn = document.getElementById('review-approve-btn');
-            approveBtn.classList.remove('bg-green-500', 'hover:bg-green-600');
+            approveBtn.classList.remove('bg-green-300', 'hover:bg-green-400');
             approveBtn.classList.add('bg-green-600', 'hover:bg-green-700');
             document.getElementById('review-comment').placeholder = '请填写驳回理由（如：缺少必要证明材料，建议补充...）';
         });
