@@ -8,4 +8,5 @@ public class CompetitionScoringService {
     public double calculateCompetitionScore(Object competitionRecord) {
         return 0.0;
     }
+    int x;
 }
