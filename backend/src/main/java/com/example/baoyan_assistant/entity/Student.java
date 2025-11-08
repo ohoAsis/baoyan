@@ -2,6 +2,8 @@ package com.example.baoyan_assistant.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 学生实体类
@@ -311,6 +313,38 @@ public class Student {
      */
     @Column
     private Boolean finalApproved;
+
+    // ==================== 关联关系字段 ====================
+
+    /**
+     * 论文记录列表（一对多关联）
+     */
+    @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<PaperRecord> papers = new ArrayList<>();
+
+    /**
+     * 专利记录列表（一对多关联）
+     */
+    @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<PatentRecord> patents = new ArrayList<>();
+
+    /**
+     * 竞赛记录列表（一对多关联）
+     */
+    @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<CompetitionRecord> competitions = new ArrayList<>();
+
+    /**
+     * 荣誉记录列表（一对多关联）
+     */
+    @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<HonorRecord> honors = new ArrayList<>();
+
+    /**
+     * 审核记录列表（一对多关联）
+     */
+    @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<ReviewRecord> reviews = new ArrayList<>();
 
     // ==================== 系统字段 ====================
 
@@ -761,6 +795,46 @@ public class Student {
 
     public void setUpdateTime(LocalDateTime updateTime) {
         this.updateTime = updateTime;
+    }
+
+    public List<PaperRecord> getPapers() {
+        return papers;
+    }
+
+    public void setPapers(List<PaperRecord> papers) {
+        this.papers = papers;
+    }
+
+    public List<PatentRecord> getPatents() {
+        return patents;
+    }
+
+    public void setPatents(List<PatentRecord> patents) {
+        this.patents = patents;
+    }
+
+    public List<CompetitionRecord> getCompetitions() {
+        return competitions;
+    }
+
+    public void setCompetitions(List<CompetitionRecord> competitions) {
+        this.competitions = competitions;
+    }
+
+    public List<HonorRecord> getHonors() {
+        return honors;
+    }
+
+    public void setHonors(List<HonorRecord> honors) {
+        this.honors = honors;
+    }
+
+    public List<ReviewRecord> getReviews() {
+        return reviews;
+    }
+
+    public void setReviews(List<ReviewRecord> reviews) {
+        this.reviews = reviews;
     }
 
     @Override
