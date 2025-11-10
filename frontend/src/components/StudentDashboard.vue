@@ -142,7 +142,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import type { User, Application } from '../App.vue';
+import type { User, Application } from '../types';
 import { Trophy, FileText, Users, Upload, LogOut } from 'lucide-vue-next';
 import Card from './ui/Card.vue';
 import CardContent from './ui/CardContent.vue';

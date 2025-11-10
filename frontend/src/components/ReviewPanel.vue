@@ -185,7 +185,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import type { Application } from '../App.vue';
+import type { Application } from '../types';
 import {
   FileText,
   Calendar,

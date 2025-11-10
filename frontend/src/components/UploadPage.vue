@@ -208,7 +208,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import type { Application } from '../App.vue';
+import type { Application } from '../types';
 import { Trophy, FileText, Lightbulb, Award, Upload, X } from 'lucide-vue-next';
 import Card from './ui/Card.vue';
 import CardContent from './ui/CardContent.vue';

@@ -58,7 +58,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import type { User, UserRole } from '../App.vue';
+import type { User, UserRole } from '../types';
 import Card from './ui/Card.vue';
 import CardContent from './ui/CardContent.vue';
 import CardDescription from './ui/CardDescription.vue';

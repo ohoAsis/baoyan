@@ -206,7 +206,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-import type { User, Application } from '../App.vue';
+import type { User, Application } from '../types';
 import { LogOut, Users, FileCheck, Trophy, Download } from 'lucide-vue-next';
 import Card from './ui/Card.vue';
 import CardContent from './ui/CardContent.vue';
@@ -228,7 +228,7 @@ import ReviewPanel from './ReviewPanel.vue';
 import RankingList from './RankingList.vue';
 import StatusBadge from './StatusBadge.vue';
 
-const {user} = defineProps<{
+const { user } = defineProps<{
   user: User;
 }>();
 
