@@ -1,32 +1,57 @@
 <template>
-  <div id="app">
-    <router-view />
+  <div class="min-h-screen bg-gray-50">
+    <LoginPage v-if="!currentUser" @login="handleLogin" />
+    <StudentDashboard
+      v-else-if="currentUser.role === 'student'"
+      :user="currentUser"
+      @logout="handleLogout"
+    />
+    <AdminDashboard
+      v-else
+      :user="currentUser"
+      @logout="handleLogout"
+    />
   </div>
 </template>
 
-<script>
-export default {
-  name: 'App'
+<script setup lang="ts">
+import { ref } from 'vue';
+import LoginPage from './components/LoginPage.vue';
+import StudentDashboard from './components/StudentDashboard.vue';
+import AdminDashboard from './components/AdminDashboard.vue';
+
+export type UserRole = 'student' | 'admin';
+
+export interface User {
+  id: string;
+  name: string;
+  studentId?: string;
+  major?: string;
+  role: UserRole;
 }
+
+export interface Application {
+  id: string;
+  studentId: string;
+  studentName: string;
+  type: string;
+  title: string;
+  description: string;
+  points: number;
+  status: 'pending' | 'approved' | 'rejected';
+  submittedAt: string;
+  reviewedAt?: string;
+  reviewComment?: string;
+  files: string[];
+}
+
+const currentUser = ref<User | null>(null);
+
+const handleLogin = (user: User) => {
+  currentUser.value = user;
+};
+
+const handleLogout = () => {
+  currentUser.value = null;
+};
 </script>
-
-<style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  color: #2c3e50;
-}
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-size: 14px;
-  line-height: 1.6;
-}
-</style>
-
