@@ -108,117 +108,85 @@ import TableHead from './ui/TableHead.vue';
 import TableHeader from './ui/TableHeader.vue';
 import TableRow from './ui/TableRow.vue';
 import Badge from './ui/Badge.vue';
+import { studentsApi } from '../api/students';
 
 interface RankingData {
-  rank: number;
-  studentId: string;
-  studentName: string;
-  totalPoints: number;
-  approvedApplications: number;
-  lastUpdate: string;
+	rank: number;
+	studentId: string;
+	studentName: string;
+	totalPoints: number;
+	approvedApplications: number;
+	lastUpdate: string;
 }
 
 const props = defineProps<{
-  currentUserId?: string;
+	currentUserId?: string;
 }>();
 
 const rankings = ref<RankingData[]>([]);
 const publishDate = ref('');
 
-onMounted(() => {
-  const mockRankings: RankingData[] = [
-    {
-      rank: 1,
-      studentId: '2021001001',
-      studentName: '张三',
-      totalPoints: 35,
-      approvedApplications: 2,
-      lastUpdate: '2024-02-25',
-    },
-    {
-      rank: 2,
-      studentId: '2021001002',
-      studentName: '李四',
-      totalPoints: 28,
-      approvedApplications: 2,
-      lastUpdate: '2024-02-24',
-    },
-    {
-      rank: 3,
-      studentId: '2021001003',
-      studentName: '王五',
-      totalPoints: 22,
-      approvedApplications: 1,
-      lastUpdate: '2024-02-23',
-    },
-    {
-      rank: 4,
-      studentId: '2021001004',
-      studentName: '赵六',
-      totalPoints: 18,
-      approvedApplications: 1,
-      lastUpdate: '2024-02-22',
-    },
-    {
-      rank: 5,
-      studentId: '2021001005',
-      studentName: '钱七',
-      totalPoints: 15,
-      approvedApplications: 1,
-      lastUpdate: '2024-02-21',
-    },
-    {
-      rank: 6,
-      studentId: '2021001006',
-      studentName: '孙八',
-      totalPoints: 12,
-      approvedApplications: 1,
-      lastUpdate: '2024-02-20',
-    },
-    {
-      rank: 7,
-      studentId: '2021001007',
-      studentName: '周九',
-      totalPoints: 8,
-      approvedApplications: 1,
-      lastUpdate: '2024-02-19',
-    },
-    {
-      rank: 8,
-      studentId: '2021001008',
-      studentName: '吴十',
-      totalPoints: 5,
-      approvedApplications: 1,
-      lastUpdate: '2024-02-18',
-    },
-  ];
+const loadFromBackend = async () => {
+	try {
+		const res = await studentsApi.list();
+		const list = Array.isArray(res.data) ? res.data : [];
+		// 由于暂未接入申请/审核数据，这里以0分占位，rank 按姓名排序示例
+		const mapped: RankingData[] = list
+			.map((s: any) => ({
+				studentId: s.studentId ?? '',
+				studentName: s.name ?? '',
+				totalPoints: 0,
+				approvedApplications: 0,
+				lastUpdate: new Date().toISOString().split('T')[0],
+				rank: 0
+			}))
+			.sort((a, b) => a.studentId.localeCompare(b.studentId))
+			.map((s, idx) => ({ ...s, rank: idx + 1 }));
+		rankings.value = mapped;
+		publishDate.value = new Date().toLocaleDateString('zh-CN');
+	} catch (e) {
+		// 回退到原有的演示数据
+		const mockRankings: RankingData[] = [
+			{ rank: 1, studentId: '2021001001', studentName: '张三', totalPoints: 35, approvedApplications: 2, lastUpdate: '2024-02-25' },
+			{ rank: 2, studentId: '2021001002', studentName: '李四', totalPoints: 28, approvedApplications: 2, lastUpdate: '2024-02-24' },
+			{ rank: 3, studentId: '2021001003', studentName: '王五', totalPoints: 22, approvedApplications: 1, lastUpdate: '2024-02-23' },
+			{ rank: 4, studentId: '2021001004', studentName: '赵六', totalPoints: 18, approvedApplications: 1, lastUpdate: '2024-02-22' },
+			{ rank: 5, studentId: '2021001005', studentName: '钱七', totalPoints: 15, approvedApplications: 1, lastUpdate: '2024-02-21' },
+			{ rank: 6, studentId: '2021001006', studentName: '孙八', totalPoints: 12, approvedApplications: 1, lastUpdate: '2024-02-20' },
+			{ rank: 7, studentId: '2021001007', studentName: '周九', totalPoints: 8, approvedApplications: 1, lastUpdate: '2024-02-19' },
+			{ rank: 8, studentId: '2021001008', studentName: '吴十', totalPoints: 5, approvedApplications: 1, lastUpdate: '2024-02-18' }
+		];
+		rankings.value = mockRankings;
+		publishDate.value = '2024年2月25日';
+	}
+};
 
-  rankings.value = mockRankings;
-  publishDate.value = '2024年2月25日';
+onMounted(() => {
+	loadFromBackend();
 });
 
 const getRankIcon = (rank: number) => {
-  if (rank === 1) return h(Trophy, { class: 'h-5 w-5 text-yellow-500' });
-  if (rank === 2) return h(Medal, { class: 'h-5 w-5 text-gray-400' });
-  if (rank === 3) return h(Award, { class: 'h-5 w-5 text-orange-500' });
-  return h('span', { class: 'text-lg' }, rank);
+	if (rank === 1) return h(Trophy, { class: 'h-5 w-5 text-yellow-500' });
+	if (rank === 2) return h(Medal, { class: 'h-5 w-5 text-gray-400' });
+	if (rank === 3) return h(Award, { class: 'h-5 w-5 text-orange-500' });
+	return h('span', { class: 'text-lg' }, rank);
 };
 
 const getRankBadge = (rank: number) => {
-  if (rank <= 3) return h(Badge, { variant: 'default' }, () => '前三名');
-  if (rank <= 10) return h(Badge, { variant: 'secondary' }, () => '前十名');
-  return null;
+	if (rank <= 3) return h(Badge, { variant: 'default' }, () => '前三名');
+	if (rank <= 10) return h(Badge, { variant: 'secondary' }, () => '前十名');
+	return null;
 };
 
 const isCurrentUser = (studentId: string) => {
-  return props.currentUserId === studentId;
+	return props.currentUserId === studentId;
 };
 
 const handleExportExcel = () => {
-  alert('正在导出Excel文件...\n\n这是演示功能，实际应用中会生成包含排名数据的Excel文件');
+	alert('正在导出Excel文件...\n\n这是演示功能，实际应用中会生成包含排名数据的Excel文件');
 };
 
 const handleExportPDF = () => {
-  alert('正在导出PDF文件...\n\n这是演示功能，实际应用中会生成包含排名数据的PDF文件');
+	alert('正在导出PDF文件...\n\n这是演示功能，实际应用中会生成包含排名数据的PDF文件');
 };
 </script>
