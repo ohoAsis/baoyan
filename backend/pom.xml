@@ -55,10 +55,23 @@
             <artifactId>sqlite-jdbc</artifactId>
             <version>3.41.2.2</version>
         </dependency>
+        <!-- Hibernate Community Dialects - 包含 SQLite 方言（兼容 Hibernate 6） -->
+        <dependency>
+            <groupId>org.hibernate.orm</groupId>
+            <artifactId>hibernate-community-dialects</artifactId>
+        </dependency>
     </dependencies>
 
 	<build>
 		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>3.11.0</version>
+				<configuration>
+					<release>17</release>
+				</configuration>
+			</plugin>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
