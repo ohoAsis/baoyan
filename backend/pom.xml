@@ -55,6 +55,11 @@
             <artifactId>sqlite-jdbc</artifactId>
             <version>3.41.2.2</version>
         </dependency>
+        <!-- Hibernate Community Dialects - 包含 SQLite 方言（兼容 Hibernate 6） -->
+        <dependency>
+            <groupId>org.hibernate.orm</groupId>
+            <artifactId>hibernate-community-dialects</artifactId>
+        </dependency>
     </dependencies>
 
 	<build>
