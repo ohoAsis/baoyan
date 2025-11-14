@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 【前端】自定义样式 */
+* {
+    box-sizing: border-box;
+}
+.hidden {
+    display: none !important;
+}
+.modal-overlay {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+/* 动画 */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
+/* 表格样式 */
+.table-container {
+    overflow-x: auto;
+}
+/* 卡片悬停效果 */
+.hover-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+/* 当前用户行高亮 */
+.current-user-row {
+    background-color: #eff6ff;
+    font-weight: 500;
+}
+
+#upload-description {
+    resize: none;
+}
+
+#review-comment {
+    resize: none;
+}
