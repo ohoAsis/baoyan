@@ -16,7 +16,11 @@
               <p class="text-sm">{{ user.name }}</p>
               <p class="text-xs text-gray-500">审核老师</p>
             </div>
-            <Button variant="ghost" @click="handleLogout">
+            <Button 
+              variant="ghost" 
+              class="transition-all duration-200 hover:bg-red-100 hover:text-red-600"
+              @click="handleLogout"
+            >
               <LogOut class="h-4 w-4 mr-2" />
               退出登录
             </Button>
@@ -26,173 +30,149 @@
     </header>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <!-- Statistics Overview -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <Card>
-          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm">待审核申请</CardTitle>
-            <FileCheck class="h-4 w-4 text-orange-600" />
-          </CardHeader>
-          <CardContent>
-            <div class="text-2xl">{{ pendingApplications.length }}</div>
-            <p class="text-xs text-muted-foreground">需要处理的申请</p>
-          </CardContent>
-        </Card>
+      <div class="flex flex-col md:flex-row gap-6">
+        <!-- Left Sidebar Navigation -->
+        <div class="w-full md:w-64 flex-shrink-0">
+          <div class="sticky top-8 space-y-1">
+            <button
+              v-for="tab in tabs"
+              :key="tab.value"
+              @click="activeTab = tab.value"
+              :class="[
+                'w-full text-left px-4 py-3 rounded-lg transition-colors flex items-center space-x-3',
+                activeTab === tab.value
+                  ? 'bg-blue-100 text-blue-700 font-medium'
+                  : 'text-gray-600 hover:bg-gray-100'
+              ]"
+            >
+              <component :is="tab.icon" class="h-5 w-5" />
+              <span>{{ tab.label }}</span>
+            </button>
+          </div>
+        </div>
 
-        <Card>
-          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm">总申请数</CardTitle>
-            <Trophy class="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div class="text-2xl">{{ totalApplications }}</div>
-            <p class="text-xs text-muted-foreground">累计提交申请</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm">已通过申请</CardTitle>
-            <Trophy class="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div class="text-2xl">{{ approvedApplications }}</div>
-            <p class="text-xs text-muted-foreground">审核通过的申请</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm">学生总数</CardTitle>
-            <Users class="h-4 w-4 text-purple-600" />
-          </CardHeader>
-          <CardContent>
-            <div class="text-2xl">{{ students.length }}</div>
-            <p class="text-xs text-muted-foreground">参与保研的学生</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <!-- Main Content -->
-      <Tabs v-model="activeTab" class="space-y-6">
-        <TabsList>
-          <TabsTrigger value="review">申请审核</TabsTrigger>
-          <TabsTrigger value="students">学生管理</TabsTrigger>
-          <TabsTrigger value="ranking">排名公示</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="review" class="space-y-6">
-          <div class="flex justify-between items-center">
+        <!-- Main Content Area -->
+        <div class="flex-1">
+          <!-- Application Review Content -->
+          <div v-show="activeTab === 'review'" class="space-y-6">
             <h2 class="text-xl">申请审核</h2>
-            <Button @click="exportRankings">
-              <Download class="h-4 w-4 mr-2" />
-              导出排名表格
-            </Button>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>待审核申请</CardTitle>
+                <CardDescription>点击申请可查看详情并进行审核</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>学生</TableHead>
+                      <TableHead>类型</TableHead>
+                      <TableHead>标题</TableHead>
+                      <TableHead>申请分值</TableHead>
+                      <TableHead>状态</TableHead>
+                      <TableHead>提交时间</TableHead>
+                      <TableHead>操作</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow v-for="app in applications" :key="app.id">
+                      <TableCell>
+                        <div>
+                          <p>{{ app.studentName }}</p>
+                          <p class="text-sm text-gray-500">{{ app.studentId }}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell>{{ app.type }}</TableCell>
+                      <TableCell>
+                        <div>
+                          <p>{{ app.title }}</p>
+                          <p class="text-sm text-gray-500">{{ app.description }}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell>{{ app.points }}</TableCell>
+                      <TableCell>
+                        <StatusBadge :status="app.status" />
+                      </TableCell>
+                      <TableCell>{{ app.submittedAt }}</TableCell>
+                      <TableCell>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          class="transition-all duration-200 hover:bg-blue-600 hover:text-white hover:border-blue-600"
+                          @click="setSelectedApplication(app)"
+                        >
+                          {{ app.status === 'pending' ? '审核' : '查看' }}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
           </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>待审核申请</CardTitle>
-              <CardDescription>点击申请可查看详情并进行审核</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>学生</TableHead>
-                    <TableHead>类型</TableHead>
-                    <TableHead>标题</TableHead>
-                    <TableHead>申请分值</TableHead>
-                    <TableHead>状态</TableHead>
-                    <TableHead>提交时间</TableHead>
-                    <TableHead>操作</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow v-for="app in applications" :key="app.id">
-                    <TableCell>
-                      <div>
-                        <p>{{ app.studentName }}</p>
-                        <p class="text-sm text-gray-500">{{ app.studentId }}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>{{ app.type }}</TableCell>
-                    <TableCell>
-                      <div>
-                        <p>{{ app.title }}</p>
-                        <p class="text-sm text-gray-500">{{ app.description }}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>{{ app.points }}</TableCell>
-                    <TableCell>
-                      <StatusBadge :status="app.status" />
-                    </TableCell>
-                    <TableCell>{{ app.submittedAt }}</TableCell>
-                    <TableCell>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        @click="setSelectedApplication(app)"
-                      >
-                        {{ app.status === 'pending' ? '审核' : '查看' }}
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="students" class="space-y-6">
-          <h2 class="text-xl">学生管理</h2>
-          <Card>
-            <CardHeader>
-              <CardTitle>学生列表</CardTitle>
-              <CardDescription>管理参与保研的学生账户信息</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>学号</TableHead>
-                    <TableHead>姓名</TableHead>
-                    <TableHead>申请数量</TableHead>
-                    <TableHead>已获得分数</TableHead>
-                    <TableHead>操作</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow v-for="student in students" :key="student.id">
-                    <TableCell>{{ student.studentId }}</TableCell>
-                    <TableCell>{{ student.name }}</TableCell>
-                    <TableCell>
-                      {{ getStudentApplications(student.studentId!).length }}
-                    </TableCell>
-                    <TableCell>
-                      {{ getStudentApprovedPoints(student.studentId!) }} 分
-                    </TableCell>
-                    <TableCell>
-                      <Button variant="outline" size="sm">查看详情</Button>
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="ranking">
-          <div class="flex justify-between items-center mb-6">
-            <h2 class="text-xl">排名公示</h2>
-            <Button @click="exportRankings">
-              <Download class="h-4 w-4 mr-2" />
-              导出排名表格
-            </Button>
+          <!-- Student Management Content -->
+          <div v-show="activeTab === 'students'" class="space-y-6">
+            <h2 class="text-xl">学生管理</h2>
+            <Card>
+              <CardHeader>
+                <CardTitle>学生列表</CardTitle>
+                <CardDescription>管理参与保研的学生账户信息</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>学号</TableHead>
+                      <TableHead>姓名</TableHead>
+                      <TableHead>申请数量</TableHead>
+                      <TableHead>已获得分数</TableHead>
+                      <TableHead>操作</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow v-for="student in students" :key="student.id">
+                      <TableCell>{{ student.studentId }}</TableCell>
+                      <TableCell>{{ student.name }}</TableCell>
+                      <TableCell>
+                        {{ getStudentApplications(student.studentId!).length }}
+                      </TableCell>
+                      <TableCell>
+                        {{ getStudentApprovedPoints(student.studentId!) }} 分
+                      </TableCell>
+                      <TableCell>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          class="transition-all duration-200 hover:bg-blue-600 hover:text-white hover:border-blue-600"
+                        >
+                          查看详情
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
           </div>
-          <RankingList />
-        </TabsContent>
-      </Tabs>
+
+          <!-- Ranking Publication Content -->
+          <div v-show="activeTab === 'ranking'" class="space-y-6">
+            <div class="flex justify-between items-center mb-6">
+              <h2 class="text-xl">排名公示</h2>
+              <Button 
+                class="transition-all duration-200 hover:bg-green-600 hover:text-white hover:border-green-600"
+                @click="exportRankings"
+              >
+                <Download class="h-4 w-4 mr-2" />
+                导出排名表格
+              </Button>
+            </div>
+            <RankingList />
+          </div>
+        </div>
+      </div>
     </div>
 
     <ReviewPanel
@@ -205,7 +185,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import type { User, Application } from '../types';
 import { LogOut, Users, FileCheck, Trophy, Download } from 'lucide-vue-next';
 import Card from './ui/Card.vue';
@@ -214,10 +194,6 @@ import CardDescription from './ui/CardDescription.vue';
 import CardHeader from './ui/CardHeader.vue';
 import CardTitle from './ui/CardTitle.vue';
 import Button from './ui/Button.vue';
-import Tabs from './ui/Tabs.vue';
-import TabsContent from './ui/TabsContent.vue';
-import TabsList from './ui/TabsList.vue';
-import TabsTrigger from './ui/TabsTrigger.vue';
 import Table from './ui/Table.vue';
 import TableBody from './ui/TableBody.vue';
 import TableCell from './ui/TableCell.vue';
@@ -241,15 +217,12 @@ const students = ref<User[]>([]);
 const selectedApplication = ref<Application | null>(null);
 const activeTab = ref('review');
 
-const pendingApplications = computed(() => {
-  return applications.value.filter((app) => app.status === 'pending');
-});
-
-const totalApplications = computed(() => applications.value.length);
-
-const approvedApplications = computed(() => {
-  return applications.value.filter((app) => app.status === 'approved').length;
-});
+// 定义导航标签页
+const tabs = [
+  { value: 'review', label: '申请审核', icon: FileCheck },
+  { value: 'students', label: '学生管理', icon: Users },
+  { value: 'ranking', label: '排名公示', icon: Trophy }
+];
 
 onMounted(() => {
   const mockStudents: User[] = [

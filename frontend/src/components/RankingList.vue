@@ -14,11 +14,21 @@
             </CardDescription>
           </div>
           <div class="flex space-x-2">
-            <Button variant="outline" size="sm" @click="handleExportExcel">
+            <Button 
+              variant="outline" 
+              size="sm"
+              class="transition-all duration-200 hover:bg-green-600 hover:text-white hover:border-green-600"
+              @click="handleExportExcel"
+            >
               <FileSpreadsheet class="h-4 w-4 mr-2" />
               导出Excel
             </Button>
-            <Button variant="outline" size="sm" @click="handleExportPDF">
+            <Button 
+              variant="outline" 
+              size="sm"
+              class="transition-all duration-200 hover:bg-green-600 hover:text-white hover:border-green-600"
+              @click="handleExportPDF"
+            >
               <FileDown class="h-4 w-4 mr-2" />
               导出PDF
             </Button>

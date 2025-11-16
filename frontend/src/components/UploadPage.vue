@@ -42,7 +42,11 @@
           </div>
         </CardHeader>
         <CardContent>
-          <Button class="w-full" variant="outline" @click="handleOpenUpload(category)">
+          <Button 
+            class="w-full transition-all duration-200 hover:bg-blue-600 hover:text-white hover:border-blue-600 hover:shadow-md" 
+            variant="outline" 
+            @click="handleOpenUpload(category)"
+          >
             <Upload class="h-4 w-4 mr-2" />
             上传材料
           </Button>
@@ -86,12 +90,12 @@
     </Card>
 
     <!-- 上传Dialog -->
-    <Dialog v-model:open="showUploadDialog" @update:open="handleCloseDialog">
-      <DialogContent class="max-w-2xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{{ currentCategory?.title }}</DialogTitle>
-          <DialogDescription>{{ currentCategory?.description }}</DialogDescription>
-        </DialogHeader>
+    <Dialog :open="showUploadDialog" @update:open="showUploadDialog = $event">
+      <DialogContent>
+        <div class="mb-4">
+          <h3 class="text-lg font-medium leading-6 text-gray-900">{{ currentCategory?.title }}</h3>
+          <p class="text-sm text-gray-500 mt-1">{{ currentCategory?.description }}</p>
+        </div>
 
         <div class="space-y-6">
           <!-- 具体分类选择 -->
@@ -158,7 +162,12 @@
           <div class="space-y-2">
             <Label>上传证明文件</Label>
             <div class="border-2 border-dashed border-gray-300 rounded-lg p-4 space-y-4">
-              <Button type="button" variant="outline" class="w-full" @click="handleFileUpload">
+              <Button 
+                type="button" 
+                variant="outline" 
+                class="w-full transition-all duration-200 hover:bg-blue-600 hover:text-white hover:border-blue-600 hover:shadow-md" 
+                @click="handleFileUpload"
+              >
                 <Upload class="h-4 w-4 mr-2" />
                 选择文件
               </Button>
@@ -216,11 +225,8 @@ import CardDescription from './ui/CardDescription.vue';
 import CardHeader from './ui/CardHeader.vue';
 import CardTitle from './ui/CardTitle.vue';
 import Button from './ui/Button.vue';
-import Dialog from './ui/Dialog.vue';
-import DialogContent from './ui/DialogContent.vue';
-import DialogDescription from './ui/DialogDescription.vue';
-import DialogHeader from './ui/DialogHeader.vue';
-import DialogTitle from './ui/DialogTitle.vue';
+import Dialog from './ui/SimpleDialog.vue';
+import DialogContent from './ui/SimpleDialogContent.vue';
 import Input from './ui/Input.vue';
 import Label from './ui/Label.vue';
 import Textarea from './ui/Textarea.vue';
@@ -348,6 +354,7 @@ const selectedSubType = computed(() => {
 const maxPoints = computed(() => selectedSubType.value?.maxPoints || 0);
 
 const handleOpenUpload = (category: CategoryConfig) => {
+  console.log('Opening upload dialog for category:', category);
   currentCategory.value = category;
   formData.value = {
     type: category.title,
@@ -358,6 +365,7 @@ const handleOpenUpload = (category: CategoryConfig) => {
   };
   files.value = [];
   showUploadDialog.value = true;
+  console.log('showUploadDialog.value:', showUploadDialog.value);
 };
 
 const handleCloseDialog = () => {

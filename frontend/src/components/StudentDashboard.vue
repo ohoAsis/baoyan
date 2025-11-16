@@ -16,7 +16,11 @@
               <p class="text-sm">{{ user.name }}</p>
               <p class="text-xs text-gray-500">学号: {{ user.studentId }}</p>
             </div>
-            <Button variant="ghost" @click="handleLogout">
+            <Button 
+              variant="ghost" 
+              class="transition-all duration-200 hover:bg-red-100 hover:text-red-600"
+              @click="handleLogout"
+            >
               <LogOut class="h-4 w-4 mr-2" />
               退出登录
             </Button>
@@ -26,134 +30,103 @@
     </header>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <!-- Score Overview -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <Card>
-          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm">当前总分</CardTitle>
-            <Trophy class="h-4 w-4 text-yellow-600" />
-          </CardHeader>
-          <CardContent>
-            <div class="text-2xl">{{ totalPoints }} 分</div>
-            <p class="text-xs text-muted-foreground">已通过审核的加分项</p>
-          </CardContent>
-        </Card>
+      <div class="flex flex-col md:flex-row gap-6">
+        <!-- Left Sidebar Navigation -->
+        <div class="w-full md:w-64 flex-shrink-0">
+          <div class="sticky top-8 space-y-1">
+            <button
+              v-for="tab in tabs"
+              :key="tab.value"
+              @click="activeTab = tab.value"
+              :class="[
+                'w-full text-left px-4 py-3 rounded-lg transition-colors flex items-center space-x-3',
+                activeTab === tab.value
+                  ? 'bg-blue-100 text-blue-700 font-medium'
+                  : 'text-gray-600 hover:bg-gray-100'
+              ]"
+            >
+              <component :is="tab.icon" class="h-5 w-5" />
+              <span>{{ tab.label }}</span>
+            </button>
+          </div>
+        </div>
 
-        <Card>
-          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm">待审核申请</CardTitle>
-            <FileText class="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div class="text-2xl">
-              {{ pendingCount }} 项
-            </div>
-            <p class="text-xs text-muted-foreground">等待管理员审核</p>
-          </CardContent>
-        </Card>
+        <!-- Main Content Area -->
+        <div class="flex-1">
+          <!-- Material Upload Content -->
+          <div v-show="activeTab === 'upload'" class="space-y-6">
+            <UploadPage
+              :student-name="user.name"
+              :student-id="user.studentId!"
+              :major="user.major || '未设置专业'"
+              :applications="applications"
+              @submit="handleApplicationSubmit"
+            />
+          </div>
 
-        <Card>
-          <CardHeader class="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle class="text-sm">总申请数</CardTitle>
-            <Users class="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div class="text-2xl">{{ applications.length }} 项</div>
-            <p class="text-xs text-muted-foreground">累计提交申请</p>
-          </CardContent>
-        </Card>
+          <!-- My Applications Content -->
+          <div v-show="activeTab === 'applications'" class="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>我的加分申请</CardTitle>
+                <CardDescription>查看您提交的所有加分申请及其审核状态</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>类型</TableHead>
+                      <TableHead>标题</TableHead>
+                      <TableHead>分值</TableHead>
+                      <TableHead>状态</TableHead>
+                      <TableHead>提交时间</TableHead>
+                      <TableHead>审核意见</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow v-for="app in applications" :key="app.id">
+                      <TableCell>{{ app.type }}</TableCell>
+                      <TableCell>
+                        <div>
+                          <p>{{ app.title }}</p>
+                          <p class="text-sm text-gray-500">{{ app.description }}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell>{{ app.points }}</TableCell>
+                      <TableCell>
+                        <StatusBadge :status="app.status" />
+                      </TableCell>
+                      <TableCell>{{ app.submittedAt }}</TableCell>
+                      <TableCell>
+                        <div v-if="app.reviewComment" class="max-w-xs">
+                          <p class="text-sm">{{ app.reviewComment }}</p>
+                          <p v-if="app.reviewedAt" class="text-xs text-gray-500">
+                            {{ app.reviewedAt }}
+                          </p>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
-
-      <!-- Main Content -->
-      <Tabs v-model="activeTab" class="space-y-6">
-        <TabsList>
-          <TabsTrigger value="upload">
-            <Upload class="h-4 w-4 mr-2" />
-            材料上传
-          </TabsTrigger>
-          <TabsTrigger value="applications">我的申请</TabsTrigger>
-          <TabsTrigger value="ranking">排名公示</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="upload">
-          <UploadPage
-            :student-name="user.name"
-            :student-id="user.studentId!"
-            :major="user.major || '未设置专业'"
-            :applications="applications"
-            @submit="handleApplicationSubmit"
-          />
-        </TabsContent>
-
-        <TabsContent value="applications" class="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>我的加分申请</CardTitle>
-              <CardDescription>查看您提交的所有加分申请及其审核状态</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>类型</TableHead>
-                    <TableHead>标题</TableHead>
-                    <TableHead>分值</TableHead>
-                    <TableHead>状态</TableHead>
-                    <TableHead>提交时间</TableHead>
-                    <TableHead>审核意见</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow v-for="app in applications" :key="app.id">
-                    <TableCell>{{ app.type }}</TableCell>
-                    <TableCell>
-                      <div>
-                        <p>{{ app.title }}</p>
-                        <p class="text-sm text-gray-500">{{ app.description }}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>{{ app.points }}</TableCell>
-                    <TableCell>
-                      <StatusBadge :status="app.status" />
-                    </TableCell>
-                    <TableCell>{{ app.submittedAt }}</TableCell>
-                    <TableCell>
-                      <div v-if="app.reviewComment" class="max-w-xs">
-                        <p class="text-sm">{{ app.reviewComment }}</p>
-                        <p v-if="app.reviewedAt" class="text-xs text-gray-500">
-                          {{ app.reviewedAt }}
-                        </p>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="ranking">
-          <RankingList :current-user-id="user.studentId!" />
-        </TabsContent>
-      </Tabs>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import type { User, Application } from '../types';
-import { Trophy, FileText, Users, Upload, LogOut } from 'lucide-vue-next';
+import { Trophy, Upload, FileText, LogOut } from 'lucide-vue-next';
 import Card from './ui/Card.vue';
 import CardContent from './ui/CardContent.vue';
 import CardDescription from './ui/CardDescription.vue';
 import CardHeader from './ui/CardHeader.vue';
 import CardTitle from './ui/CardTitle.vue';
 import Button from './ui/Button.vue';
-import Tabs from './ui/Tabs.vue';
-import TabsContent from './ui/TabsContent.vue';
-import TabsList from './ui/TabsList.vue';
-import TabsTrigger from './ui/TabsTrigger.vue';
 import Table from './ui/Table.vue';
 import TableBody from './ui/TableBody.vue';
 import TableCell from './ui/TableCell.vue';
@@ -161,7 +134,6 @@ import TableHead from './ui/TableHead.vue';
 import TableHeader from './ui/TableHeader.vue';
 import TableRow from './ui/TableRow.vue';
 import UploadPage from './UploadPage.vue';
-import RankingList from './RankingList.vue';
 import StatusBadge from './StatusBadge.vue';
 
 const props = defineProps<{
@@ -175,15 +147,10 @@ const emit = defineEmits<{
 const applications = ref<Application[]>([]);
 const activeTab = ref('upload');
 
-const totalPoints = computed(() => {
-  return applications.value
-    .filter((app) => app.status === 'approved')
-    .reduce((sum, app) => sum + app.points, 0);
-});
-
-const pendingCount = computed(() => {
-  return applications.value.filter((app) => app.status === 'pending').length;
-});
+const tabs = [
+  { value: 'upload', label: '材料上传', icon: Upload },
+  { value: 'applications', label: '我的申请', icon: FileText }
+];
 
 onMounted(() => {
   const mockApplications: Application[] = [
