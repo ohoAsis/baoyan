@@ -9,7 +9,7 @@ export default defineConfig({
 			'/api': {
 				target: 'http://localhost:8081',
 				changeOrigin: true,
-				rewrite: (path) => path.replace(/^\/api/, '')
+				// 不重写路径，保留/api前缀，因为后端API路径包含/api
 			}
 		}
 	}

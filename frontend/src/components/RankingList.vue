@@ -139,22 +139,45 @@ const publishDate = ref('');
 const loadFromBackend = async () => {
 	try {
 		const res = await studentsApi.list();
-		const list = Array.isArray(res.data) ? res.data : [];
-		// 由于暂未接入申请/审核数据，这里以0分占位，rank 按姓名排序示例
+		// 确保res.data是数组，处理可能的嵌套结构
+		let list = [];
+		if (Array.isArray(res)) {
+			list = res;
+		} else if (res && Array.isArray(res.data)) {
+			list = res.data;
+		} else if (res && res.data && Array.isArray(res.data.data)) {
+			list = res.data.data;
+		} else {
+			console.warn('API返回的数据结构不符合预期:', res);
+			throw new Error('API返回的数据结构不符合预期');
+		}
+		
+		// 将StudentDTO映射为RankingData
 		const mapped: RankingData[] = list
-			.map((s: any) => ({
-				studentId: s.studentId ?? '',
-				studentName: s.name ?? '',
-				totalPoints: 0,
-				approvedApplications: 0,
-				lastUpdate: new Date().toISOString().split('T')[0],
-				rank: 0
-			}))
-			.sort((a, b) => a.studentId.localeCompare(b.studentId))
-			.map((s, idx) => ({ ...s, rank: idx + 1 }));
+			.map((s: any) => {
+				// 确保必要字段存在
+				if (!s.studentId || !s.name) {
+					console.warn('学生数据缺少必要字段:', s);
+					return null;
+				}
+				
+				return {
+					studentId: s.studentId,
+					studentName: s.name,
+					totalPoints: s.totalScore || 0, // 使用后端返回的总分
+					approvedApplications: 0, // 暂时设为0，后续可以从申请数据中计算
+					lastUpdate: s.updateTime ? new Date(s.updateTime).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+					rank: 0 // 稍后会重新计算排名
+				};
+			})
+			.filter(item => item !== null) // 过滤掉无效数据
+			.sort((a, b) => b.totalPoints - a.totalPoints) // 按总分降序排序
+			.map((s, idx) => ({ ...s, rank: idx + 1 })); // 重新计算排名
+			
 		rankings.value = mapped;
 		publishDate.value = new Date().toLocaleDateString('zh-CN');
 	} catch (e) {
+		console.error('从后端加载排名数据失败:', e);
 		// 回退到原有的演示数据
 		const mockRankings: RankingData[] = [
 			{ rank: 1, studentId: '2021001001', studentName: '张三', totalPoints: 35, approvedApplications: 2, lastUpdate: '2024-02-25' },

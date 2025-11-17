@@ -55,3 +55,30 @@ export interface UpdateApplicationRequest {
   reviewComment?: string;
 }
 
+export interface Paper {
+  id: string;
+  title: string;
+  level: string;
+  publication: string;
+  publishDate: string;
+  authorOrder: number;
+  totalAuthors: number;
+  unitIsFirstUnit: boolean;
+  baseScore: number;
+  computedScore: number;
+  evidenceFiles: string[];
+  createTime: string;
+  updateTime: string;
+}
+
+export interface CreatePaperRequest {
+  title: string;
+  level: string;
+  publication: string;
+  publishDate: string;
+  authorOrder: number;
+  totalAuthors: number;
+  unitIsFirstUnit: boolean;
+  evidenceFiles: string[];
+}
+

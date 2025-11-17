@@ -151,14 +151,12 @@ public class StudentController {
      * @return 更新后的学生对象
      */
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateStudent(@PathVariable Long id, @RequestBody Student student) {
+    public ResponseEntity<StudentDTO> updateStudent(@PathVariable Long id, @RequestBody Student student) {
         try {
             Student updatedStudent = studentService.updateStudent(id, student);
             return ResponseEntity.ok(StudentDTO.fromEntity(updatedStudent));
         } catch (RuntimeException e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+            return ResponseEntity.notFound().build();
         }
     }
     
@@ -174,9 +172,7 @@ public class StudentController {
             Student deletedStudent = studentService.deleteStudent(id);
             return ResponseEntity.ok(StudentDTO.fromEntity(deletedStudent));
         } catch (RuntimeException e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", e.getMessage());
-            return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+            return ResponseEntity.notFound().build();
         }
     }
     
@@ -188,7 +184,7 @@ public class StudentController {
      */
     @GetMapping("/check/{studentId}")
     public ResponseEntity<Map<String, Object>> checkStudentIdExists(@PathVariable String studentId) {
-        boolean exists = studentService.checkStudentIdExists(studentId);
+        boolean exists = studentService.existsByStudentId(studentId);
         Map<String, Object> response = new HashMap<>();
         response.put("exists", exists);
         return ResponseEntity.ok(response);

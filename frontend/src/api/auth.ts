@@ -1,3 +1,4 @@
+import apiClient from './client';
 import { User } from '../types';
 
 export interface LoginRequest {
@@ -12,12 +13,13 @@ export interface LoginResponse {
 
 export const authApi = {
   // 登录
-  login: async (credentials: LoginRequest) => {
+  login: async (credentials: LoginRequest): Promise<LoginResponse> => {
     // 在实际应用中，这里会调用真实的API
-    // const response = await apiClient.post<LoginResponse>('/auth/login', credentials);
-    // return response.data;
+    const response = await apiClient.post<LoginResponse>('/auth/login', credentials);
+    return response.data;
     
-    // 模拟登录API
+    // 模拟登录API（保留作为备用）
+    /* 
     return new Promise<LoginResponse>((resolve, reject) => {
       setTimeout(() => {
         // 模拟用户验证
@@ -62,28 +64,32 @@ export const authApi = {
         }
       }, 500);
     });
+    */
   },
   
   // 登出
-  logout: async () => {
+  logout: async (): Promise<void> => {
     // 在实际应用中，这里会调用真实的API
-    // await apiClient.post('/auth/logout');
+    await apiClient.post('/auth/logout');
     
-    // 模拟登出API
+    // 模拟登出API（保留作为备用）
+    /* 
     return new Promise<void>((resolve) => {
       setTimeout(() => {
         resolve();
       }, 200);
     });
+    */
   },
   
   // 获取当前用户信息
-  getCurrentUser: async () => {
+  getCurrentUser: async (): Promise<User> => {
     // 在实际应用中，这里会调用真实的API
-    // const response = await apiClient.get<User>('/auth/me');
-    // return response.data;
+    const response = await apiClient.get<User>('/auth/me');
+    return response.data;
     
-    // 模拟获取当前用户API
+    // 模拟获取当前用户API（保留作为备用）
+    /* 
     return new Promise<User>((resolve, reject) => {
       setTimeout(() => {
         const savedUser = localStorage.getItem('currentUser');
@@ -98,5 +104,6 @@ export const authApi = {
         }
       }, 200);
     });
+    */
   }
 };

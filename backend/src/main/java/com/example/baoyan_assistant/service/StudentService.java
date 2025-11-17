@@ -157,13 +157,14 @@ public class StudentService {
     /**
      * 删除学生
      * @param id 学生ID
+     * @return 删除前的学生对象
      * @throws RuntimeException 如果学生不存在
      */
-    public void deleteStudent(Long id) {
-        if (!studentRepository.existsById(id)) {
-            throw new RuntimeException("学生不存在，ID: " + id);
-        }
+    public Student deleteStudent(Long id) {
+        Student student = studentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("学生不存在，ID: " + id));
         studentRepository.deleteById(id);
+        return student;
     }
     
     /**
