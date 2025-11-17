@@ -1,12 +1,5 @@
 package com.example.baoyan_assistant.controller;
 
-import com.example.baoyan_assistant.dto.ApplicationDTO;
-import com.example.baoyan_assistant.dto.DTOConverter;
-import com.example.baoyan_assistant.dto.PaperRecordDTO;
-import com.example.baoyan_assistant.dto.PatentRecordDTO;
-import com.example.baoyan_assistant.dto.CompetitionRecordDTO;
-import com.example.baoyan_assistant.dto.HonorRecordDTO;
-import com.example.baoyan_assistant.dto.ReviewRecordDTO;
 import com.example.baoyan_assistant.dto.StudentDTO;
 import com.example.baoyan_assistant.entity.Student;
 import com.example.baoyan_assistant.service.StudentService;
@@ -41,7 +34,8 @@ public class StudentController {
     public ResponseEntity<?> createStudent(@RequestBody Student student) {
         try {
             Student savedStudent = studentService.createStudent(student);
-            return new ResponseEntity<>(savedStudent, HttpStatus.CREATED);
+            StudentDTO studentDTO = StudentDTO.fromEntity(savedStudent);
+            return new ResponseEntity<>(studentDTO, HttpStatus.CREATED);
         } catch (RuntimeException e) {
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
@@ -58,7 +52,7 @@ public class StudentController {
     public ResponseEntity<List<StudentDTO>> getAllStudents() {
         List<Student> students = studentService.getAllStudents();
         List<StudentDTO> studentDTOs = students.stream()
-                .map(DTOConverter::convertToStudentDTO)
+                .map(StudentDTO::fromEntity)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(studentDTOs);
     }
@@ -72,7 +66,7 @@ public class StudentController {
     @GetMapping("/{id}")
     public ResponseEntity<StudentDTO> getStudentById(@PathVariable Long id) {
         return studentService.getStudentById(id)
-                .map(student -> ResponseEntity.ok(DTOConverter.convertToStudentDTO(student)))
+                .map(student -> ResponseEntity.ok(StudentDTO.fromEntity(student)))
                 .orElse(ResponseEntity.notFound().build());
     }
     
@@ -85,28 +79,28 @@ public class StudentController {
     @GetMapping("/studentId/{studentId}")
     public ResponseEntity<StudentDTO> getStudentByStudentId(@PathVariable String studentId) {
         return studentService.getStudentByStudentId(studentId)
-                .map(student -> ResponseEntity.ok(DTOConverter.convertToStudentDTO(student)))
+                .map(student -> ResponseEntity.ok(StudentDTO.fromEntity(student)))
                 .orElse(ResponseEntity.notFound().build());
     }
     
     /**
-     * 根据姓名模糊查询学生
-     * GET /api/students/search/name?name={name}
-     * @param name 姓名
+     * 根据姓名查询学生
+     * GET /api/students/name/{name}
+     * @param name 学生姓名
      * @return 学生列表
      */
     @GetMapping("/name/{name}")
     public ResponseEntity<List<StudentDTO>> getStudentsByName(@PathVariable String name) {
         List<Student> students = studentService.getStudentsByName(name);
         List<StudentDTO> studentDTOs = students.stream()
-                .map(DTOConverter::convertToStudentDTO)
+                .map(StudentDTO::fromEntity)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(studentDTOs);
     }
     
     /**
      * 根据专业查询学生
-     * GET /api/students/search/major?major={major}
+     * GET /api/students/major/{major}
      * @param major 专业名称
      * @return 学生列表
      */
@@ -114,33 +108,39 @@ public class StudentController {
     public ResponseEntity<List<StudentDTO>> getStudentsByMajor(@PathVariable String major) {
         List<Student> students = studentService.getStudentsByMajor(major);
         List<StudentDTO> studentDTOs = students.stream()
-                .map(DTOConverter::convertToStudentDTO)
+                .map(StudentDTO::fromEntity)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(studentDTOs);
     }
     
     /**
      * 根据年级查询学生
-     * GET /api/students/search/grade?grade={grade}
+     * GET /api/students/grade/{grade}
      * @param grade 年级
      * @return 学生列表
      */
-    @GetMapping("/search/grade")
-    public ResponseEntity<List<Student>> getStudentsByGrade(@RequestParam String grade) {
+    @GetMapping("/grade/{grade}")
+    public ResponseEntity<List<StudentDTO>> getStudentsByGrade(@PathVariable String grade) {
         List<Student> students = studentService.getStudentsByGrade(grade);
-        return ResponseEntity.ok(students);
+        List<StudentDTO> studentDTOs = students.stream()
+                .map(StudentDTO::fromEntity)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(studentDTOs);
     }
     
     /**
      * 根据申请状态查询学生
-     * GET /api/students/search/status?status={status}
+     * GET /api/students/applicationStatus/{status}
      * @param status 申请状态
      * @return 学生列表
      */
-    @GetMapping("/search/status")
-    public ResponseEntity<List<Student>> getStudentsByApplicationStatus(@RequestParam String status) {
+    @GetMapping("/applicationStatus/{status}")
+    public ResponseEntity<List<StudentDTO>> getStudentsByApplicationStatus(@PathVariable String status) {
         List<Student> students = studentService.getStudentsByApplicationStatus(status);
-        return ResponseEntity.ok(students);
+        List<StudentDTO> studentDTOs = students.stream()
+                .map(StudentDTO::fromEntity)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(studentDTOs);
     }
     
     /**
@@ -154,7 +154,7 @@ public class StudentController {
     public ResponseEntity<?> updateStudent(@PathVariable Long id, @RequestBody Student student) {
         try {
             Student updatedStudent = studentService.updateStudent(id, student);
-            return ResponseEntity.ok(updatedStudent);
+            return ResponseEntity.ok(StudentDTO.fromEntity(updatedStudent));
         } catch (RuntimeException e) {
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
@@ -166,13 +166,13 @@ public class StudentController {
      * 删除学生
      * DELETE /api/students/{id}
      * @param id 学生ID
-     * @return 删除成功响应
+     * @return 删除成功的学生对象
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteStudent(@PathVariable Long id) {
+    public ResponseEntity<StudentDTO> deleteStudent(@PathVariable Long id) {
         try {
-            studentService.deleteStudent(id);
-            return ResponseEntity.noContent().build();
+            Student deletedStudent = studentService.deleteStudent(id);
+            return ResponseEntity.ok(StudentDTO.fromEntity(deletedStudent));
         } catch (RuntimeException e) {
             Map<String, String> error = new HashMap<>();
             error.put("error", e.getMessage());
@@ -182,16 +182,15 @@ public class StudentController {
     
     /**
      * 检查学号是否存在
-     * GET /api/students/check/studentId/{studentId}
+     * GET /api/students/check/{studentId}
      * @param studentId 学号
-     * @return 是否存在
+     * @return 检查结果
      */
-    @GetMapping("/check/studentId/{studentId}")
+    @GetMapping("/check/{studentId}")
     public ResponseEntity<Map<String, Object>> checkStudentIdExists(@PathVariable String studentId) {
-        boolean exists = studentService.existsByStudentId(studentId);
+        boolean exists = studentService.checkStudentIdExists(studentId);
         Map<String, Object> response = new HashMap<>();
         response.put("exists", exists);
-        response.put("studentId", studentId);
         return ResponseEntity.ok(response);
     }
 }
