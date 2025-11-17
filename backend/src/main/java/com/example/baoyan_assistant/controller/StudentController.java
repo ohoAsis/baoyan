@@ -1,5 +1,13 @@
 package com.example.baoyan_assistant.controller;
 
+import com.example.baoyan_assistant.dto.ApplicationDTO;
+import com.example.baoyan_assistant.dto.DTOConverter;
+import com.example.baoyan_assistant.dto.PaperRecordDTO;
+import com.example.baoyan_assistant.dto.PatentRecordDTO;
+import com.example.baoyan_assistant.dto.CompetitionRecordDTO;
+import com.example.baoyan_assistant.dto.HonorRecordDTO;
+import com.example.baoyan_assistant.dto.ReviewRecordDTO;
+import com.example.baoyan_assistant.dto.StudentDTO;
 import com.example.baoyan_assistant.entity.Student;
 import com.example.baoyan_assistant.service.StudentService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 学生信息管理控制器
@@ -46,9 +55,12 @@ public class StudentController {
      * @return 所有学生列表
      */
     @GetMapping
-    public ResponseEntity<List<Student>> getAllStudents() {
+    public ResponseEntity<List<StudentDTO>> getAllStudents() {
         List<Student> students = studentService.getAllStudents();
-        return ResponseEntity.ok(students);
+        List<StudentDTO> studentDTOs = students.stream()
+                .map(DTOConverter::convertToStudentDTO)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(studentDTOs);
     }
     
     /**
@@ -58,9 +70,9 @@ public class StudentController {
      * @return 学生对象
      */
     @GetMapping("/{id}")
-    public ResponseEntity<Student> getStudentById(@PathVariable Long id) {
+    public ResponseEntity<StudentDTO> getStudentById(@PathVariable Long id) {
         return studentService.getStudentById(id)
-                .map(ResponseEntity::ok)
+                .map(student -> ResponseEntity.ok(DTOConverter.convertToStudentDTO(student)))
                 .orElse(ResponseEntity.notFound().build());
     }
     
@@ -71,9 +83,9 @@ public class StudentController {
      * @return 学生对象
      */
     @GetMapping("/studentId/{studentId}")
-    public ResponseEntity<Student> getStudentByStudentId(@PathVariable String studentId) {
+    public ResponseEntity<StudentDTO> getStudentByStudentId(@PathVariable String studentId) {
         return studentService.getStudentByStudentId(studentId)
-                .map(ResponseEntity::ok)
+                .map(student -> ResponseEntity.ok(DTOConverter.convertToStudentDTO(student)))
                 .orElse(ResponseEntity.notFound().build());
     }
     
@@ -83,10 +95,13 @@ public class StudentController {
      * @param name 姓名
      * @return 学生列表
      */
-    @GetMapping("/search/name")
-    public ResponseEntity<List<Student>> getStudentsByName(@RequestParam String name) {
+    @GetMapping("/name/{name}")
+    public ResponseEntity<List<StudentDTO>> getStudentsByName(@PathVariable String name) {
         List<Student> students = studentService.getStudentsByName(name);
-        return ResponseEntity.ok(students);
+        List<StudentDTO> studentDTOs = students.stream()
+                .map(DTOConverter::convertToStudentDTO)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(studentDTOs);
     }
     
     /**
@@ -95,10 +110,13 @@ public class StudentController {
      * @param major 专业名称
      * @return 学生列表
      */
-    @GetMapping("/search/major")
-    public ResponseEntity<List<Student>> getStudentsByMajor(@RequestParam String major) {
+    @GetMapping("/major/{major}")
+    public ResponseEntity<List<StudentDTO>> getStudentsByMajor(@PathVariable String major) {
         List<Student> students = studentService.getStudentsByMajor(major);
-        return ResponseEntity.ok(students);
+        List<StudentDTO> studentDTOs = students.stream()
+                .map(DTOConverter::convertToStudentDTO)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(studentDTOs);
     }
     
     /**
