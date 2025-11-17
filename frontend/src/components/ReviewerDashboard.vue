@@ -186,7 +186,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import type { User, Application } from '../types';
+import type { User, Application, Student } from '../types';
 import { LogOut, Users, FileCheck, Trophy, Download } from 'lucide-vue-next';
 import Card from './ui/Card.vue';
 import CardContent from './ui/CardContent.vue';
@@ -203,6 +203,7 @@ import TableRow from './ui/TableRow.vue';
 import ReviewPanel from './ReviewPanel.vue';
 import RankingList from './RankingList.vue';
 import StatusBadge from './StatusBadge.vue';
+import { studentsApi, applicationsApi } from '../api';
 
 const { user } = defineProps<{
   user: User;
@@ -213,7 +214,7 @@ const emit = defineEmits<{
 }>();
 
 const applications = ref<Application[]>([]);
-const students = ref<User[]>([]);
+const students = ref<Student[]>([]);
 const selectedApplication = ref<Application | null>(null);
 const activeTab = ref('review');
 
@@ -224,82 +225,19 @@ const tabs = [
   { value: 'ranking', label: '排名公示', icon: Trophy }
 ];
 
-onMounted(() => {
-  const mockStudents: User[] = [
-    { id: '1', name: '张三', studentId: '2021001001', role: 'student' },
-    { id: '2', name: '李四', studentId: '2021001002', role: 'student' },
-    { id: '3', name: '王五', studentId: '2021001003', role: 'student' },
-    { id: '4', name: '赵六', studentId: '2021001004', role: 'student' },
-  ];
-  students.value = mockStudents;
-
-  const mockApplications: Application[] = [
-    {
-      id: '1',
-      studentId: '2021001001',
-      studentName: '张三',
-      type: '学科竞赛',
-      title: '全国大学生数学建模竞赛',
-      description: '获得省级一等奖',
-      points: 15,
-      status: 'approved',
-      submittedAt: '2024-01-15',
-      reviewedAt: '2024-01-18',
-      reviewComment: '材料齐全，符合加分标准',
-      files: ['竞赛证书.pdf'],
-    },
-    {
-      id: '2',
-      studentId: '2021001001',
-      studentName: '张三',
-      type: '学术论文',
-      title: 'AI在教育领域的应用研究',
-      description: '第一作者，发表在核心期刊',
-      points: 20,
-      status: 'pending',
-      submittedAt: '2024-02-20',
-      files: ['论文截图.png', '期刊封面.jpg'],
-    },
-    {
-      id: '3',
-      studentId: '2021001002',
-      studentName: '李四',
-      type: '科研项目',
-      title: 'ACM国际大学生程序设计竞赛',
-      description: '获得区域赛金奖',
-      points: 18,
-      status: 'pending',
-      submittedAt: '2024-02-18',
-      files: ['获奖证书.pdf', '参赛照片.jpg'],
-    },
-    {
-      id: '4',
-      studentId: '2021001003',
-      studentName: '王五',
-      type: '创新创业',
-      title: '全国大学生创新创业大赛',
-      description: '项目获得省级二等奖',
-      points: 12,
-      status: 'pending',
-      submittedAt: '2024-02-19',
-      files: ['项目书.pdf', '答辩PPT.pptx'],
-    },
-    {
-      id: '5',
-      studentId: '2021001002',
-      studentName: '李四',
-      type: '学术论文',
-      title: '机器学习在金融风控中的应用',
-      description: '第二作者，发表在EI期刊',
-      points: 8,
-      status: 'rejected',
-      submittedAt: '2024-01-20',
-      reviewedAt: '2024-01-22',
-      reviewComment: '第二作者分值过高，建议调整为5分',
-      files: ['论文首页.pdf'],
-    },
-  ];
-  applications.value = mockApplications;
+onMounted(async () => {
+  try {
+    // 获取学生数据
+    const studentsData = await studentsApi.list();
+    students.value = studentsData;
+    
+    // 获取申请数据
+    const applicationsData = await applicationsApi.list();
+    applications.value = applicationsData;
+  } catch (error) {
+    console.error('获取数据失败:', error);
+    // 可以在这里添加错误提示
+  }
 });
 
 const handleReview = (

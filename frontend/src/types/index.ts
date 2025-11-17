@@ -82,3 +82,78 @@ export interface CreatePaperRequest {
   evidenceFiles: string[];
 }
 
+export interface Competition {
+  id: string;
+  name: string;
+  level: string;
+  awardLevel: string;
+  awardDate: string;
+  teamMembers: string[];
+  isTeamLeader: boolean;
+  baseScore: number;
+  computedScore: number;
+  evidenceFiles: string[];
+  createTime: string;
+  updateTime: string;
+}
+
+export interface CreateCompetitionRequest {
+  name: string;
+  level: string;
+  awardLevel: string;
+  awardDate: string;
+  teamMembers: string[];
+  isTeamLeader: boolean;
+  evidenceFiles: string[];
+}
+
+export interface Patent {
+  id: string;
+  name: string;
+  type: string;
+  applicationNumber: string;
+  authorizationNumber: string;
+  applicationDate: string;
+  authorizationDate: string;
+  inventors: string[];
+  isPrimaryInventor: boolean;
+  baseScore: number;
+  computedScore: number;
+  evidenceFiles: string[];
+  createTime: string;
+  updateTime: string;
+}
+
+export interface CreatePatentRequest {
+  name: string;
+  type: string;
+  applicationNumber: string;
+  authorizationNumber: string;
+  applicationDate: string;
+  authorizationDate: string;
+  inventors: string[];
+  isPrimaryInventor: boolean;
+  evidenceFiles: string[];
+}
+
+export interface Honor {
+  id: string;
+  name: string;
+  level: string;
+  awardingUnit: string;
+  awardDate: string;
+  baseScore: number;
+  computedScore: number;
+  evidenceFiles: string[];
+  createTime: string;
+  updateTime: string;
+}
+
+export interface CreateHonorRequest {
+  name: string;
+  level: string;
+  awardingUnit: string;
+  awardDate: string;
+  evidenceFiles: string[];
+}
+

@@ -50,10 +50,14 @@
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead class="w-20">排名</TableHead>
-                <TableHead>学号</TableHead>
-                <TableHead>姓名</TableHead>
+                <TableHead class="text-center">排名</TableHead>
+                <TableHead class="text-center">学号</TableHead>
+                <TableHead class="text-center">姓名</TableHead>
                 <TableHead class="text-center">总分</TableHead>
+                <TableHead class="text-center">论文</TableHead>
+                <TableHead class="text-center">竞赛</TableHead>
+                <TableHead class="text-center">荣誉</TableHead>
+                <TableHead class="text-center">专利</TableHead>
                 <TableHead class="text-center">通过项目数</TableHead>
                 <TableHead class="text-center">最后更新</TableHead>
                 <TableHead class="text-center">状态</TableHead>
@@ -80,8 +84,20 @@
                 </TableCell>
                 <TableCell>{{ student.studentName }}</TableCell>
                 <TableCell class="text-center">
-                  <span class="text-lg">{{ student.totalPoints }}</span>
+                  <span class="text-lg font-semibold">{{ student.totalPoints }}</span>
                   <span class="text-sm text-gray-500 ml-1">分</span>
+                </TableCell>
+                <TableCell class="text-center">
+                  <span class="text-blue-600">{{ student.paperPoints || 0 }}</span>
+                </TableCell>
+                <TableCell class="text-center">
+                  <span class="text-green-600">{{ student.competitionPoints || 0 }}</span>
+                </TableCell>
+                <TableCell class="text-center">
+                  <span class="text-purple-600">{{ student.honorPoints || 0 }}</span>
+                </TableCell>
+                <TableCell class="text-center">
+                  <span class="text-orange-600">{{ student.patentPoints || 0 }}</span>
                 </TableCell>
                 <TableCell class="text-center">{{ student.approvedApplications }}</TableCell>
                 <TableCell class="text-center text-sm text-gray-500">{{ student.lastUpdate }}</TableCell>
@@ -118,15 +134,19 @@ import TableHead from './ui/TableHead.vue';
 import TableHeader from './ui/TableHeader.vue';
 import TableRow from './ui/TableRow.vue';
 import Badge from './ui/Badge.vue';
-import { studentsApi } from '../api/students';
+import { studentsApi, papersApi, competitionsApi, honorsApi, patentsApi } from '../api';
 
 interface RankingData {
-	rank: number;
-	studentId: string;
-	studentName: string;
-	totalPoints: number;
-	approvedApplications: number;
-	lastUpdate: string;
+  rank: number;
+  studentId: string;
+  studentName: string;
+  totalPoints: number;
+  approvedApplications: number;
+  lastUpdate: string;
+  paperPoints?: number;
+  competitionPoints?: number;
+  honorPoints?: number;
+  patentPoints?: number;
 }
 
 const props = defineProps<{
@@ -136,62 +156,89 @@ const props = defineProps<{
 const rankings = ref<RankingData[]>([]);
 const publishDate = ref('');
 
+// 计算学生的总加分
+const calculateTotalPoints = async (student: any) => {
+  try {
+    // 获取论文加分
+    const papers = await papersApi.getByStudentId(student.studentId);
+    const paperPoints = papers.reduce((sum, paper) => sum + (paper.computedScore || 0), 0);
+    
+    // 获取竞赛加分
+    const competitions = await competitionsApi.getByStudentId(student.studentId);
+    const competitionPoints = competitions.reduce((sum, competition) => sum + (competition.computedScore || 0), 0);
+    
+    // 获取荣誉加分
+    const honors = await honorsApi.getByStudentId(student.studentId);
+    const honorPoints = honors.reduce((sum, honor) => sum + (honor.computedScore || 0), 0);
+    
+    // 获取专利加分
+    const patents = await patentsApi.getByStudentId(student.studentId);
+    const patentPoints = patents.reduce((sum, patent) => sum + (patent.computedScore || 0), 0);
+    
+    // 计算通过项目数
+    const approvedApplications = papers.length + competitions.length + honors.length + patents.length;
+    
+    return {
+      totalPoints: paperPoints + competitionPoints + honorPoints + patentPoints,
+      approvedApplications,
+      paperPoints,
+      competitionPoints,
+      honorPoints,
+      patentPoints
+    };
+  } catch (error) {
+    console.error(`计算学生 ${student.studentId} 的总分失败:`, error);
+    return {
+      totalPoints: 0,
+      approvedApplications: 0,
+      paperPoints: 0,
+      competitionPoints: 0,
+      honorPoints: 0,
+      patentPoints: 0
+    };
+  }
+};
+
 const loadFromBackend = async () => {
-	try {
-		const res = await studentsApi.list();
-		// 确保res.data是数组，处理可能的嵌套结构
-		let list = [];
-		if (Array.isArray(res)) {
-			list = res;
-		} else if (res && Array.isArray(res.data)) {
-			list = res.data;
-		} else if (res && res.data && Array.isArray(res.data.data)) {
-			list = res.data.data;
-		} else {
-			console.warn('API返回的数据结构不符合预期:', res);
-			throw new Error('API返回的数据结构不符合预期');
-		}
-		
-		// 将StudentDTO映射为RankingData
-		const mapped: RankingData[] = list
-			.map((s: any) => {
-				// 确保必要字段存在
-				if (!s.studentId || !s.name) {
-					console.warn('学生数据缺少必要字段:', s);
-					return null;
-				}
-				
-				return {
-					studentId: s.studentId,
-					studentName: s.name,
-					totalPoints: s.totalScore || 0, // 使用后端返回的总分
-					approvedApplications: 0, // 暂时设为0，后续可以从申请数据中计算
-					lastUpdate: s.updateTime ? new Date(s.updateTime).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
-					rank: 0 // 稍后会重新计算排名
-				};
-			})
-			.filter(item => item !== null) // 过滤掉无效数据
-			.sort((a, b) => b.totalPoints - a.totalPoints) // 按总分降序排序
-			.map((s, idx) => ({ ...s, rank: idx + 1 })); // 重新计算排名
-			
-		rankings.value = mapped;
-		publishDate.value = new Date().toLocaleDateString('zh-CN');
-	} catch (e) {
-		console.error('从后端加载排名数据失败:', e);
-		// 回退到原有的演示数据
-		const mockRankings: RankingData[] = [
-			{ rank: 1, studentId: '2021001001', studentName: '张三', totalPoints: 35, approvedApplications: 2, lastUpdate: '2024-02-25' },
-			{ rank: 2, studentId: '2021001002', studentName: '李四', totalPoints: 28, approvedApplications: 2, lastUpdate: '2024-02-24' },
-			{ rank: 3, studentId: '2021001003', studentName: '王五', totalPoints: 22, approvedApplications: 1, lastUpdate: '2024-02-23' },
-			{ rank: 4, studentId: '2021001004', studentName: '赵六', totalPoints: 18, approvedApplications: 1, lastUpdate: '2024-02-22' },
-			{ rank: 5, studentId: '2021001005', studentName: '钱七', totalPoints: 15, approvedApplications: 1, lastUpdate: '2024-02-21' },
-			{ rank: 6, studentId: '2021001006', studentName: '孙八', totalPoints: 12, approvedApplications: 1, lastUpdate: '2024-02-20' },
-			{ rank: 7, studentId: '2021001007', studentName: '周九', totalPoints: 8, approvedApplications: 1, lastUpdate: '2024-02-19' },
-			{ rank: 8, studentId: '2021001008', studentName: '吴十', totalPoints: 5, approvedApplications: 1, lastUpdate: '2024-02-18' }
-		];
-		rankings.value = mockRankings;
-		publishDate.value = '2024年2月25日';
-	}
+  try {
+    // 获取学生列表
+    const students = await studentsApi.list();
+    
+    // 为每个学生计算总分
+    const rankingsData = await Promise.all(
+      students.map(async (student) => {
+        const pointsData = await calculateTotalPoints(student);
+        
+        return {
+          rank: 0, // 稍后会重新计算排名
+          studentId: student.studentId,
+          studentName: student.name,
+          totalPoints: pointsData.totalPoints,
+          approvedApplications: pointsData.approvedApplications,
+          lastUpdate: new Date().toISOString().split('T')[0],
+          paperPoints: pointsData.paperPoints,
+          competitionPoints: pointsData.competitionPoints,
+          honorPoints: pointsData.honorPoints,
+          patentPoints: pointsData.patentPoints
+        };
+      })
+    );
+    
+    // 按总分降序排序并计算排名
+    const sortedRankings = rankingsData
+      .sort((a, b) => b.totalPoints - a.totalPoints)
+      .map((student, index) => ({
+        ...student,
+        rank: index + 1
+      }));
+    
+    rankings.value = sortedRankings;
+    publishDate.value = new Date().toLocaleDateString('zh-CN');
+  } catch (error) {
+    console.error('从后端加载排名数据失败:', error);
+    rankings.value = [];
+    publishDate.value = new Date().toLocaleDateString('zh-CN');
+  }
 };
 
 onMounted(() => {
