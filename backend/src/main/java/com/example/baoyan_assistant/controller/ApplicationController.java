@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
  * 提供申请信息的 RESTful API 接口
  */
 @RestController
-@RequestMapping("/api/applications")
+@RequestMapping("/api")
 @CrossOrigin(origins = "*")
 public class ApplicationController {
     
@@ -30,7 +30,7 @@ public class ApplicationController {
      * GET /api/applications
      * @return 所有申请列表
      */
-    @GetMapping
+    @GetMapping("/applications")
     public ResponseEntity<List<ApplicationDTO>> getAllApplications() {
         List<Application> applications = applicationService.getAll();
         List<ApplicationDTO> applicationDTOs = applications.stream()
@@ -45,7 +45,7 @@ public class ApplicationController {
      * @param id 申请ID
      * @return 申请对象
      */
-    @GetMapping("/{id}")
+    @GetMapping("/applications/{id}")
     public ResponseEntity<ApplicationDTO> getApplicationById(@PathVariable Long id) {
         try {
             Application application = applicationService.getById(id);
@@ -63,11 +63,37 @@ public class ApplicationController {
      */
     @GetMapping("/students/{studentId}/applications")
     public ResponseEntity<List<ApplicationDTO>> getApplicationsByStudentId(@PathVariable String studentId) {
-        List<Application> applications = applicationService.getByStudentId(studentId);
-        List<ApplicationDTO> applicationDTOs = applications.stream()
-                .map(ApplicationDTO::fromEntity)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(applicationDTOs);
+        try {
+            List<Application> applications = applicationService.getByStudentId(studentId);
+            List<ApplicationDTO> applicationDTOs = applications.stream()
+                    .map(ApplicationDTO::fromEntity)
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(applicationDTOs);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+    
+    /**
+     * 根据学生ID和状态获取申请列表
+     * GET /api/students/{studentId}/applications?status={status}
+     * @param studentId 学生ID
+     * @param status 申请状态
+     * @return 申请列表
+     */
+    @GetMapping("/students/{studentId}/applications/filter")
+    public ResponseEntity<List<ApplicationDTO>> getApplicationsByStudentIdAndStatus(
+            @PathVariable String studentId,
+            @RequestParam String status) {
+        try {
+            List<Application> applications = applicationService.getByStudentIdAndStatus(studentId, status);
+            List<ApplicationDTO> applicationDTOs = applications.stream()
+                    .map(ApplicationDTO::fromEntity)
+                    .collect(Collectors.toList());
+            return ResponseEntity.ok(applicationDTOs);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
     
     /**
@@ -76,13 +102,13 @@ public class ApplicationController {
      * @param createDTO 创建申请DTO
      * @return 创建的申请对象
      */
-    @PostMapping
+    @PostMapping("/applications")
     public ResponseEntity<ApplicationDTO> createApplication(@RequestBody ApplicationCreateDTO createDTO) {
         try {
             Application application = applicationService.create(createDTO);
             return new ResponseEntity<>(ApplicationDTO.fromEntity(application), HttpStatus.CREATED);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(null);
         }
     }
     
@@ -93,7 +119,7 @@ public class ApplicationController {
      * @param updateDTO 更新申请DTO
      * @return 更新后的申请对象
      */
-    @PutMapping("/{id}")
+    @PutMapping("/applications/{id}")
     public ResponseEntity<ApplicationDTO> updateApplication(
             @PathVariable Long id, 
             @RequestBody ApplicationUpdateDTO updateDTO) {
@@ -111,10 +137,26 @@ public class ApplicationController {
      * @param id 申请ID
      * @return 无内容
      */
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/applications/{id}")
     public ResponseEntity<Void> deleteApplication(@PathVariable Long id) {
         try {
             applicationService.delete(id);
+            return ResponseEntity.noContent().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+    
+    /**
+     * 根据学生ID删除所有申请
+     * DELETE /api/students/{studentId}/applications
+     * @param studentId 学生ID
+     * @return 无内容
+     */
+    @DeleteMapping("/students/{studentId}/applications")
+    public ResponseEntity<Void> deleteApplicationsByStudentId(@PathVariable String studentId) {
+        try {
+            applicationService.deleteByStudentId(studentId);
             return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();

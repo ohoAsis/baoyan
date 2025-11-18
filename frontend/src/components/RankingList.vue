@@ -54,10 +54,6 @@
                 <TableHead class="text-center">学号</TableHead>
                 <TableHead class="text-center">姓名</TableHead>
                 <TableHead class="text-center">总分</TableHead>
-                <TableHead class="text-center">论文</TableHead>
-                <TableHead class="text-center">竞赛</TableHead>
-                <TableHead class="text-center">荣誉</TableHead>
-                <TableHead class="text-center">专利</TableHead>
                 <TableHead class="text-center">通过项目数</TableHead>
                 <TableHead class="text-center">最后更新</TableHead>
                 <TableHead class="text-center">状态</TableHead>
@@ -86,18 +82,6 @@
                 <TableCell class="text-center">
                   <span class="text-lg font-semibold">{{ student.totalPoints }}</span>
                   <span class="text-sm text-gray-500 ml-1">分</span>
-                </TableCell>
-                <TableCell class="text-center">
-                  <span class="text-blue-600">{{ student.paperPoints || 0 }}</span>
-                </TableCell>
-                <TableCell class="text-center">
-                  <span class="text-green-600">{{ student.competitionPoints || 0 }}</span>
-                </TableCell>
-                <TableCell class="text-center">
-                  <span class="text-purple-600">{{ student.honorPoints || 0 }}</span>
-                </TableCell>
-                <TableCell class="text-center">
-                  <span class="text-orange-600">{{ student.patentPoints || 0 }}</span>
                 </TableCell>
                 <TableCell class="text-center">{{ student.approvedApplications }}</TableCell>
                 <TableCell class="text-center text-sm text-gray-500">{{ student.lastUpdate }}</TableCell>
@@ -134,7 +118,7 @@ import TableHead from './ui/TableHead.vue';
 import TableHeader from './ui/TableHeader.vue';
 import TableRow from './ui/TableRow.vue';
 import Badge from './ui/Badge.vue';
-import { studentsApi, papersApi, competitionsApi, honorsApi, patentsApi } from '../api';
+import { studentsApi, applicationsApi } from '../api';
 
 interface RankingData {
   rank: number;
@@ -143,10 +127,6 @@ interface RankingData {
   totalPoints: number;
   approvedApplications: number;
   lastUpdate: string;
-  paperPoints?: number;
-  competitionPoints?: number;
-  honorPoints?: number;
-  patentPoints?: number;
 }
 
 const props = defineProps<{
@@ -159,42 +139,24 @@ const publishDate = ref('');
 // 计算学生的总加分
 const calculateTotalPoints = async (student: any) => {
   try {
-    // 获取论文加分
-    const papers = await papersApi.getByStudentId(student.studentId);
-    const paperPoints = papers.reduce((sum, paper) => sum + (paper.computedScore || 0), 0);
+    // 获取学生的所有申请
+    const applications = await applicationsApi.getByStudentId(student.studentId);
     
-    // 获取竞赛加分
-    const competitions = await competitionsApi.getByStudentId(student.studentId);
-    const competitionPoints = competitions.reduce((sum, competition) => sum + (competition.computedScore || 0), 0);
+    // 过滤状态为"approved"的申请
+    const approvedApplications = applications.filter(app => app.status === 'approved');
     
-    // 获取荣誉加分
-    const honors = await honorsApi.getByStudentId(student.studentId);
-    const honorPoints = honors.reduce((sum, honor) => sum + (honor.computedScore || 0), 0);
-    
-    // 获取专利加分
-    const patents = await patentsApi.getByStudentId(student.studentId);
-    const patentPoints = patents.reduce((sum, patent) => sum + (patent.computedScore || 0), 0);
-    
-    // 计算通过项目数
-    const approvedApplications = papers.length + competitions.length + honors.length + patents.length;
+    // 计算已通过申请的points总和
+    const totalApprovedPoints = approvedApplications.reduce((sum, app) => sum + (app.points || 0), 0);
     
     return {
-      totalPoints: paperPoints + competitionPoints + honorPoints + patentPoints,
-      approvedApplications,
-      paperPoints,
-      competitionPoints,
-      honorPoints,
-      patentPoints
+      totalPoints: totalApprovedPoints,
+      approvedApplications: approvedApplications.length
     };
   } catch (error) {
     console.error(`计算学生 ${student.studentId} 的总分失败:`, error);
     return {
       totalPoints: 0,
-      approvedApplications: 0,
-      paperPoints: 0,
-      competitionPoints: 0,
-      honorPoints: 0,
-      patentPoints: 0
+      approvedApplications: 0
     };
   }
 };
@@ -215,11 +177,7 @@ const loadFromBackend = async () => {
           studentName: student.name,
           totalPoints: pointsData.totalPoints,
           approvedApplications: pointsData.approvedApplications,
-          lastUpdate: new Date().toISOString().split('T')[0],
-          paperPoints: pointsData.paperPoints,
-          competitionPoints: pointsData.competitionPoints,
-          honorPoints: pointsData.honorPoints,
-          patentPoints: pointsData.patentPoints
+          lastUpdate: new Date().toISOString().split('T')[0]
         };
       })
     );

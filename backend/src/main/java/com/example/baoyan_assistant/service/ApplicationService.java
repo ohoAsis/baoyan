@@ -56,7 +56,44 @@ public class ApplicationService {
      */
     @Transactional(readOnly = true)
     public List<Application> getByStudentId(String studentId) {
+        // 验证学生是否存在
+        if (!studentRepository.existsByStudentId(studentId)) {
+            throw new RuntimeException("学生不存在，学号: " + studentId);
+        }
+        
         return applicationRepository.findByStudentId(studentId);
+    }
+    
+    /**
+     * 根据学生ID和状态获取申请列表
+     * @param studentId 学生ID
+     * @param status 申请状态
+     * @return 申请列表
+     */
+    @Transactional(readOnly = true)
+    public List<Application> getByStudentIdAndStatus(String studentId, String status) {
+        // 验证学生是否存在
+        if (!studentRepository.existsByStudentId(studentId)) {
+            throw new RuntimeException("学生不存在，学号: " + studentId);
+        }
+        
+        return applicationRepository.findByStudentIdAndStatus(studentId, status);
+    }
+    
+    /**
+     * 根据学生ID和申请类型获取申请列表
+     * @param studentId 学生ID
+     * @param type 申请类型
+     * @return 申请列表
+     */
+    @Transactional(readOnly = true)
+    public List<Application> getByStudentIdAndType(String studentId, String type) {
+        // 验证学生是否存在
+        if (!studentRepository.existsByStudentId(studentId)) {
+            throw new RuntimeException("学生不存在，学号: " + studentId);
+        }
+        
+        return applicationRepository.findByStudentIdAndType(studentId, type);
     }
     
     /**
@@ -66,13 +103,13 @@ public class ApplicationService {
      * @throws RuntimeException 如果学生不存在
      */
     public Application create(ApplicationCreateDTO dto) {
-        // 根据学号查找学生
+        // 根据 dto.studentId 查询学生
         Student student = studentRepository.findByStudentId(dto.getStudentId())
                 .orElseThrow(() -> new RuntimeException("学生不存在，学号: " + dto.getStudentId()));
         
-        // 创建申请对象
+        // 创建 Application 并设置学生对象
         Application application = new Application();
-        application.setStudent(student);
+        application.setStudent(student);  // 必须设置学生对象，而不是 studentId
         application.setType(dto.getType());
         application.setTitle(dto.getTitle());
         application.setDescription(dto.getDescription());
@@ -87,6 +124,7 @@ public class ApplicationService {
             application.setFiles("");
         }
         
+        // 保存并返回完整的 Application 对象
         return applicationRepository.save(application);
     }
     
@@ -98,17 +136,22 @@ public class ApplicationService {
      * @throws RuntimeException 如果申请不存在
      */
     public Application update(Long id, ApplicationUpdateDTO dto) {
+        // 验证输入参数
+        if (dto == null) {
+            throw new RuntimeException("更新信息不能为空");
+        }
+        
         // 查找申请
         Application application = applicationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("申请不存在，ID: " + id));
         
         // 更新状态
-        if (dto.getStatus() != null) {
+        if (dto.getStatus() != null && !dto.getStatus().trim().isEmpty()) {
             application.setStatus(dto.getStatus());
         }
         
         // 更新审核评论
-        if (dto.getReviewComment() != null) {
+        if (dto.getReviewComment() != null && !dto.getReviewComment().trim().isEmpty()) {
             application.setReviewComment(dto.getReviewComment());
         }
         
@@ -128,5 +171,37 @@ public class ApplicationService {
             throw new RuntimeException("申请不存在，ID: " + id);
         }
         applicationRepository.deleteById(id);
+    }
+    
+    /**
+     * 根据学生ID删除所有申请
+     * @param studentId 学生ID
+     * @throws RuntimeException 如果学生不存在
+     */
+    public void deleteByStudentId(String studentId) {
+        // 验证学生是否存在
+        if (!studentRepository.existsByStudentId(studentId)) {
+            throw new RuntimeException("学生不存在，学号: " + studentId);
+        }
+        
+        List<Application> applications = applicationRepository.findByStudentId(studentId);
+        for (Application application : applications) {
+            applicationRepository.delete(application);
+        }
+    }
+    
+    /**
+     * 根据学生ID获取单个申请（可选）
+     * @param studentId 学生ID
+     * @return 申请对象（可选）
+     */
+    @Transactional(readOnly = true)
+    public Optional<Application> getOptionalByStudentId(String studentId) {
+        // 验证学生是否存在
+        if (!studentRepository.existsByStudentId(studentId)) {
+            throw new RuntimeException("学生不存在，学号: " + studentId);
+        }
+        
+        return applicationRepository.findOptionalByStudentId(studentId);
     }
 }
