@@ -1,5 +1,5 @@
 <template>
-  <Dialog :open="showReviewDialog" @update:open="showReviewDialog = $event">
+  <Dialog v-model:open="showReviewDialog">
     <DialogContent>
       <div class="mb-4">
         <h3 class="text-lg font-medium leading-6 text-gray-900">审核申请</h3>
@@ -62,7 +62,8 @@
             <h4 class="text-sm font-medium text-gray-900">审核意见</h4>
             <Textarea
               placeholder="请输入审核意见"
-              v-model="reviewComment"
+              :value="reviewComment"
+              @update:value="reviewComment = $event"
               class="mt-2"
               :disabled="isSubmitting"
             />
