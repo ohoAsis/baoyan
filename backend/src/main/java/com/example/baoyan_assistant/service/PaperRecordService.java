@@ -27,7 +27,7 @@ public class PaperRecordService {
      * @param studentId 学生ID
      * @return 论文记录列表
      */
-    public List<PaperRecord> getPapersByStudentId(Long studentId) {
+    public List<PaperRecord> getPapersByStudentId(String studentId) {
         return paperRecordRepository.findByStudentId(studentId);
     }
     
@@ -37,7 +37,7 @@ public class PaperRecordService {
      * @param paperId 论文ID
      * @return 论文记录
      */
-    public Optional<PaperRecord> getPaperByIdAndStudentId(Long studentId, Long paperId) {
+    public Optional<PaperRecord> getPaperByIdAndStudentId(String studentId, Long paperId) {
         return Optional.ofNullable(paperRecordRepository.findByStudentIdAndId(studentId, paperId));
     }
     
@@ -47,9 +47,9 @@ public class PaperRecordService {
      * @param paperRecord 论文记录
      * @return 保存后的论文记录
      */
-    public PaperRecord createPaperForStudent(Long studentId, PaperRecord paperRecord) {
+    public PaperRecord createPaperForStudent(String studentId, PaperRecord paperRecord) {
         // 验证学生是否存在
-        Optional<Student> studentOptional = studentRepository.findById(studentId);
+        Optional<Student> studentOptional = studentRepository.findByStudentId(studentId);
         if (studentOptional.isEmpty()) {
             throw new RuntimeException("学生不存在，ID: " + studentId);
         }
@@ -68,7 +68,7 @@ public class PaperRecordService {
      * @param paperRecord 更新的论文记录
      * @return 更新后的论文记录
      */
-    public PaperRecord updatePaper(Long studentId, Long paperId, PaperRecord paperRecord) {
+    public PaperRecord updatePaper(String studentId, Long paperId, PaperRecord paperRecord) {
         // 验证论文记录是否存在且属于该学生
         Optional<PaperRecord> existingPaperOptional = getPaperByIdAndStudentId(studentId, paperId);
         if (existingPaperOptional.isEmpty()) {
@@ -99,7 +99,7 @@ public class PaperRecordService {
      * @param paperId 论文ID
      * @return 被删除的论文记录
      */
-    public PaperRecord deletePaper(Long studentId, Long paperId) {
+    public PaperRecord deletePaper(String studentId, Long paperId) {
         // 验证论文记录是否存在且属于该学生
         Optional<PaperRecord> existingPaperOptional = getPaperByIdAndStudentId(studentId, paperId);
         if (existingPaperOptional.isEmpty()) {

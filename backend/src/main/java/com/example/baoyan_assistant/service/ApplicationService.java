@@ -55,7 +55,7 @@ public class ApplicationService {
      * @return 申请列表
      */
     @Transactional(readOnly = true)
-    public List<Application> getByStudentId(Long studentId) {
+    public List<Application> getByStudentId(String studentId) {
         return applicationRepository.findByStudentId(studentId);
     }
     
@@ -66,9 +66,9 @@ public class ApplicationService {
      * @throws RuntimeException 如果学生不存在
      */
     public Application create(ApplicationCreateDTO dto) {
-        // 查找学生
-        Student student = studentRepository.findById(dto.getStudentId())
-                .orElseThrow(() -> new RuntimeException("学生不存在，ID: " + dto.getStudentId()));
+        // 根据学号查找学生
+        Student student = studentRepository.findByStudentId(dto.getStudentId())
+                .orElseThrow(() -> new RuntimeException("学生不存在，学号: " + dto.getStudentId()));
         
         // 创建申请对象
         Application application = new Application();
@@ -83,6 +83,8 @@ public class ApplicationService {
         // 设置文件列表（如果有）
         if (dto.getFiles() != null && !dto.getFiles().isEmpty()) {
             application.setFiles(String.join(",", dto.getFiles()));
+        } else {
+            application.setFiles("");
         }
         
         return applicationRepository.save(application);
@@ -100,20 +102,18 @@ public class ApplicationService {
         Application application = applicationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("申请不存在，ID: " + id));
         
-        // 更新状态和审核评论
+        // 更新状态
         if (dto.getStatus() != null) {
-            String oldStatus = application.getStatus();
             application.setStatus(dto.getStatus());
-            
-            // 如果状态从pending变为其他状态，设置审核时间
-            if (!"pending".equals(dto.getStatus()) && "pending".equals(oldStatus)) {
-                application.setReviewedAt(LocalDateTime.now());
-            }
         }
         
+        // 更新审核评论
         if (dto.getReviewComment() != null) {
             application.setReviewComment(dto.getReviewComment());
         }
+        
+        // 每次更新都设置审核时间
+        application.setReviewedAt(LocalDateTime.now());
         
         return applicationRepository.save(application);
     }

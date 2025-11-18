@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 public class CompetitionRecordDTO {
     
     private Long id;
+    private String studentId;
     private String name;
     private String level;
     private String award;
@@ -52,6 +53,14 @@ public class CompetitionRecordDTO {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getStudentId() {
+        return studentId;
+    }
+
+    public void setStudentId(String studentId) {
+        this.studentId = studentId;
     }
 
     public String getName() {
@@ -156,6 +165,7 @@ public class CompetitionRecordDTO {
 
         CompetitionRecordDTO dto = new CompetitionRecordDTO();
         dto.setId(entity.getId());
+        dto.setStudentId(entity.getStudent().getStudentId());
         dto.setName(entity.getName());
         dto.setLevel(entity.getLevel());
         dto.setAward(entity.getAward());
@@ -167,7 +177,8 @@ public class CompetitionRecordDTO {
         
         // 处理证据文件字符串转换为列表
         if (entity.getEvidenceFiles() != null && !entity.getEvidenceFiles().isEmpty()) {
-            List<String> files = Arrays.asList(entity.getEvidenceFiles().split(","));
+            // 使用Arrays.stream(...).toList()方法转换
+            List<String> files = Arrays.stream(entity.getEvidenceFiles().split(",")).toList();
             dto.setEvidenceFiles(files);
         }
         
@@ -202,6 +213,8 @@ public class CompetitionRecordDTO {
         if (dto.getEvidenceFiles() != null && !dto.getEvidenceFiles().isEmpty()) {
             String files = String.join(",", dto.getEvidenceFiles());
             entity.setEvidenceFiles(files);
+        } else {
+            entity.setEvidenceFiles("");
         }
         
         return entity;

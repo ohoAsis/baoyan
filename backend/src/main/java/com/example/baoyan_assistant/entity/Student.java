@@ -340,12 +340,6 @@ public class Student {
     @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<HonorRecord> honors = new ArrayList<>();
 
-    /**
-     * 审核记录列表（一对多关联）
-     */
-    @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<ReviewRecord> reviews = new ArrayList<>();
-
     // ==================== 系统字段 ====================
 
     /**
@@ -827,14 +821,6 @@ public class Student {
 
     public void setHonors(List<HonorRecord> honors) {
         this.honors = honors;
-    }
-
-    public List<ReviewRecord> getReviews() {
-        return reviews;
-    }
-
-    public void setReviews(List<ReviewRecord> reviews) {
-        this.reviews = reviews;
     }
 
     @Override

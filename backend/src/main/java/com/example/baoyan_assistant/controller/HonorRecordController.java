@@ -25,7 +25,7 @@ public class HonorRecordController {
      * @return 荣誉记录列表
      */
     @GetMapping
-    public ResponseEntity<List<HonorRecordDTO>> getHonorsByStudentId(@PathVariable Long id) {
+    public ResponseEntity<List<HonorRecordDTO>> getHonorsByStudentId(@PathVariable String id) {
         try {
             List<HonorRecordDTO> honors = honorRecordService.getHonorsByStudentId(id);
             return ResponseEntity.ok(honors);
@@ -42,7 +42,7 @@ public class HonorRecordController {
      */
     @GetMapping("/{honorId}")
     public ResponseEntity<HonorRecordDTO> getHonorByIdAndStudentId(
-            @PathVariable Long id, @PathVariable Long honorId) {
+            @PathVariable String id, @PathVariable Long honorId) {
         try {
             HonorRecordDTO honor = honorRecordService.getHonorByIdAndStudentId(id, honorId);
             return ResponseEntity.ok(honor);
@@ -59,7 +59,7 @@ public class HonorRecordController {
      */
     @PostMapping
     public ResponseEntity<HonorRecordDTO> createHonorForStudent(
-            @PathVariable Long id, @RequestBody HonorRecordDTO honorDTO) {
+            @PathVariable String id, @RequestBody HonorRecordDTO honorDTO) {
         try {
             HonorRecordDTO createdHonor = honorRecordService.createHonorForStudent(id, honorDTO);
             return ResponseEntity.status(HttpStatus.CREATED).body(createdHonor);
@@ -77,7 +77,7 @@ public class HonorRecordController {
      */
     @PutMapping("/{honorId}")
     public ResponseEntity<HonorRecordDTO> updateHonor(
-            @PathVariable Long id, @PathVariable Long honorId, @RequestBody HonorRecordDTO honorDTO) {
+            @PathVariable String id, @PathVariable Long honorId, @RequestBody HonorRecordDTO honorDTO) {
         try {
             HonorRecordDTO updatedHonor = honorRecordService.updateHonor(id, honorId, honorDTO);
             return ResponseEntity.ok(updatedHonor);
@@ -94,7 +94,7 @@ public class HonorRecordController {
      */
     @DeleteMapping("/{honorId}")
     public ResponseEntity<HonorRecordDTO> deleteHonor(
-            @PathVariable Long id, @PathVariable Long honorId) {
+            @PathVariable String id, @PathVariable Long honorId) {
         try {
             HonorRecordDTO deletedHonor = honorRecordService.deleteHonor(id, honorId);
             return ResponseEntity.ok(deletedHonor);

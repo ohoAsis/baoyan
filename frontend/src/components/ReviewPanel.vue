@@ -64,15 +64,26 @@
               placeholder="请输入审核意见"
               v-model="reviewComment"
               class="mt-2"
+              :disabled="isSubmitting"
             />
+            <!-- 错误提示 -->
+            <div v-if="errorMessage" class="mt-2 text-sm text-red-600">
+              {{ errorMessage }}
+            </div>
           </div>
         </div>
 
         <!-- 按钮 -->
         <div class="flex justify-end space-x-4">
-          <Button variant="outline" @click="handleCloseDialog">关闭</Button>
-          <Button variant="destructive" @click="handleReject">驳回</Button>
-          <Button @click="handleApprove">通过</Button>
+          <Button variant="outline" @click="handleCloseDialog" :disabled="isSubmitting">关闭</Button>
+          <Button variant="destructive" @click="handleReject" :disabled="isSubmitting">
+            <span v-if="isSubmitting" class="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600"></span>
+            驳回
+          </Button>
+          <Button @click="handleApprove" :disabled="isSubmitting">
+            <span v-if="isSubmitting" class="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600"></span>
+            通过
+          </Button>
         </div>
       </div>
     </DialogContent>
@@ -89,25 +100,30 @@ import Button from './ui/Button.vue';
 import Dialog from './ui/SimpleDialog.vue';
 import DialogContent from './ui/SimpleDialogContent.vue';
 import Textarea from './ui/Textarea.vue';
+import { applicationsApi } from '../api';
 
 const props = defineProps<{
   application: Application;
 }>();
 
 const emit = defineEmits<{
-  review: [applicationId: string, status: 'approved' | 'rejected', comment: string];
+  'review-complete': [];
   close: [];
 }>();
 
 const showReviewDialog = ref(false);
 const reviewComment = ref('');
 const currentApplication = ref(props.application);
+const isSubmitting = ref(false);
+const errorMessage = ref('');
 
 // 监听application prop的变化，当有新的application时自动打开弹窗
 watch(() => props.application, (newApplication) => {
   if (newApplication) {
     currentApplication.value = newApplication;
     showReviewDialog.value = true;
+    reviewComment.value = '';
+    errorMessage.value = '';
     console.log('Opening review dialog for application:', newApplication);
     console.log('showReviewDialog.value:', showReviewDialog.value);
   }
@@ -118,20 +134,54 @@ const handleCloseDialog = () => {
   emit('close');
 };
 
-const handleApprove = () => {
+const handleApprove = async () => {
   if (!reviewComment.value.trim()) {
-    alert('请填写审核意见');
+    errorMessage.value = '请填写审核意见';
     return;
   }
-  emit('review', props.application.id, 'approved', reviewComment.value);
+  
+  try {
+    isSubmitting.value = true;
+    errorMessage.value = '';
+    
+    await applicationsApi.update(currentApplication.value.id, {
+      status: 'approved',
+      reviewComment: reviewComment.value
+    });
+    
+    emit('review-complete');
+    handleCloseDialog();
+  } catch (error) {
+    console.error('审核通过失败:', error);
+    errorMessage.value = '审核失败，请重试';
+  } finally {
+    isSubmitting.value = false;
+  }
 };
 
-const handleReject = () => {
+const handleReject = async () => {
   if (!reviewComment.value.trim()) {
-    alert('请填写审核意见');
+    errorMessage.value = '请填写审核意见';
     return;
   }
-  emit('review', props.application.id, 'rejected', reviewComment.value);
+  
+  try {
+    isSubmitting.value = true;
+    errorMessage.value = '';
+    
+    await applicationsApi.update(currentApplication.value.id, {
+      status: 'rejected',
+      reviewComment: reviewComment.value
+    });
+    
+    emit('review-complete');
+    handleCloseDialog();
+  } catch (error) {
+    console.error('审核驳回失败:', error);
+    errorMessage.value = '审核失败，请重试';
+  } finally {
+    isSubmitting.value = false;
+  }
 };
 
 const getCategoryName = (category: string) => {

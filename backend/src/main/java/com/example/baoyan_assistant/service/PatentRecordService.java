@@ -29,9 +29,9 @@ public class PatentRecordService {
      * @param studentId 学生ID
      * @return 专利记录DTO列表
      */
-    public List<PatentRecordDTO> getPatentsByStudentId(Long studentId) {
+    public List<PatentRecordDTO> getPatentsByStudentId(String studentId) {
         // 验证学生是否存在
-        Optional<Student> student = studentRepository.findById(studentId);
+        Optional<Student> student = studentRepository.findByStudentId(studentId);
         if (!student.isPresent()) {
             throw new RuntimeException("学生不存在，ID: " + studentId);
         }
@@ -48,9 +48,9 @@ public class PatentRecordService {
      * @param patentId 专利记录ID
      * @return 专利记录DTO
      */
-    public PatentRecordDTO getPatentByIdAndStudentId(Long studentId, Long patentId) {
+    public PatentRecordDTO getPatentByIdAndStudentId(String studentId, Long patentId) {
         // 验证学生是否存在
-        Optional<Student> student = studentRepository.findById(studentId);
+        Optional<Student> student = studentRepository.findByStudentId(studentId);
         if (!student.isPresent()) {
             throw new RuntimeException("学生不存在，ID: " + studentId);
         }
@@ -69,9 +69,9 @@ public class PatentRecordService {
      * @param patentDTO 专利记录DTO
      * @return 创建的专利记录DTO
      */
-    public PatentRecordDTO createPatentForStudent(Long studentId, PatentRecordDTO patentDTO) {
+    public PatentRecordDTO createPatentForStudent(String studentId, PatentRecordDTO patentDTO) {
         // 验证学生是否存在
-        Optional<Student> student = studentRepository.findById(studentId);
+        Optional<Student> student = studentRepository.findByStudentId(studentId);
         if (!student.isPresent()) {
             throw new RuntimeException("学生不存在，ID: " + studentId);
         }
@@ -90,9 +90,9 @@ public class PatentRecordService {
      * @param patentDTO 更新的专利记录DTO
      * @return 更新后的专利记录DTO
      */
-    public PatentRecordDTO updatePatent(Long studentId, Long patentId, PatentRecordDTO patentDTO) {
+    public PatentRecordDTO updatePatent(String studentId, Long patentId, PatentRecordDTO patentDTO) {
         // 验证学生是否存在
-        Optional<Student> student = studentRepository.findById(studentId);
+        Optional<Student> student = studentRepository.findByStudentId(studentId);
         if (!student.isPresent()) {
             throw new RuntimeException("学生不存在，ID: " + studentId);
         }
@@ -126,9 +126,9 @@ public class PatentRecordService {
      * @param patentId 专利记录ID
      * @return 被删除的专利记录DTO
      */
-    public PatentRecordDTO deletePatent(Long studentId, Long patentId) {
+    public PatentRecordDTO deletePatent(String studentId, Long patentId) {
         // 验证学生是否存在
-        Optional<Student> student = studentRepository.findById(studentId);
+        Optional<Student> student = studentRepository.findByStudentId(studentId);
         if (!student.isPresent()) {
             throw new RuntimeException("学生不存在，ID: " + studentId);
         }

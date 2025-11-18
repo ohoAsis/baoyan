@@ -14,7 +14,7 @@ import java.util.List;
  */
 public class ApplicationDTO {
     
-    private String id;
+    private Long id;
     private String studentId;
     private String studentName;
     private String type;
@@ -40,13 +40,12 @@ public class ApplicationDTO {
     public static ApplicationDTO fromEntity(Application application) {
         ApplicationDTO dto = new ApplicationDTO();
         
-        // 将Long类型的id转换为String类型
-        dto.setId(application.getId() != null ? application.getId().toString() : null);
+        // 直接设置Long类型的id
+        dto.setId(application.getId());
         
         // 设置学生ID和学生姓名
         if (application.getStudent() != null) {
-            dto.setStudentId(application.getStudent().getId() != null ? 
-                application.getStudent().getId().toString() : null);
+            dto.setStudentId(application.getStudent().getStudentId());
             dto.setStudentName(application.getStudent().getName());
         }
         
@@ -70,12 +69,43 @@ public class ApplicationDTO {
         return dto;
     }
     
+    // 从DTO转换为实体的静态方法
+    public static Application toEntity(ApplicationDTO dto) {
+        if (dto == null) {
+            return null;
+        }
+        
+        Application application = new Application();
+        
+        // 设置ID
+        application.setId(dto.getId());
+        
+        // 复制其他属性
+        application.setType(dto.getType());
+        application.setTitle(dto.getTitle());
+        application.setDescription(dto.getDescription());
+        application.setPoints(dto.getPoints());
+        application.setStatus(dto.getStatus());
+        application.setSubmittedAt(dto.getSubmittedAt());
+        application.setReviewedAt(dto.getReviewedAt());
+        application.setReviewComment(dto.getReviewComment());
+        
+        // 处理文件列表转换为字符串
+        if (dto.getFiles() != null && !dto.getFiles().isEmpty()) {
+            application.setFiles(String.join(",", dto.getFiles()));
+        } else {
+            application.setFiles("");
+        }
+        
+        return application;
+    }
+    
     // Getter和Setter方法
-    public String getId() {
+    public Long getId() {
         return id;
     }
     
-    public void setId(String id) {
+    public void setId(Long id) {
         this.id = id;
     }
     

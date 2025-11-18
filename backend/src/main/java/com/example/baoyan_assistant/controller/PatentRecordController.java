@@ -25,7 +25,7 @@ public class PatentRecordController {
      * @return 专利记录列表
      */
     @GetMapping
-    public ResponseEntity<List<PatentRecordDTO>> getPatentsByStudentId(@PathVariable Long id) {
+    public ResponseEntity<List<PatentRecordDTO>> getPatentsByStudentId(@PathVariable String id) {
         try {
             List<PatentRecordDTO> patents = patentRecordService.getPatentsByStudentId(id);
             return ResponseEntity.ok(patents);
@@ -42,7 +42,7 @@ public class PatentRecordController {
      */
     @GetMapping("/{patentId}")
     public ResponseEntity<PatentRecordDTO> getPatentByIdAndStudentId(
-            @PathVariable Long id, @PathVariable Long patentId) {
+            @PathVariable String id, @PathVariable Long patentId) {
         try {
             PatentRecordDTO patent = patentRecordService.getPatentByIdAndStudentId(id, patentId);
             return ResponseEntity.ok(patent);
@@ -59,7 +59,7 @@ public class PatentRecordController {
      */
     @PostMapping
     public ResponseEntity<PatentRecordDTO> createPatentForStudent(
-            @PathVariable Long id, @RequestBody PatentRecordDTO patentDTO) {
+            @PathVariable String id, @RequestBody PatentRecordDTO patentDTO) {
         try {
             PatentRecordDTO createdPatent = patentRecordService.createPatentForStudent(id, patentDTO);
             return ResponseEntity.status(HttpStatus.CREATED).body(createdPatent);
@@ -77,7 +77,7 @@ public class PatentRecordController {
      */
     @PutMapping("/{patentId}")
     public ResponseEntity<PatentRecordDTO> updatePatent(
-            @PathVariable Long id, @PathVariable Long patentId, @RequestBody PatentRecordDTO patentDTO) {
+            @PathVariable String id, @PathVariable Long patentId, @RequestBody PatentRecordDTO patentDTO) {
         try {
             PatentRecordDTO updatedPatent = patentRecordService.updatePatent(id, patentId, patentDTO);
             return ResponseEntity.ok(updatedPatent);
@@ -94,7 +94,7 @@ public class PatentRecordController {
      */
     @DeleteMapping("/{patentId}")
     public ResponseEntity<PatentRecordDTO> deletePatent(
-            @PathVariable Long id, @PathVariable Long patentId) {
+            @PathVariable String id, @PathVariable Long patentId) {
         try {
             PatentRecordDTO deletedPatent = patentRecordService.deletePatent(id, patentId);
             return ResponseEntity.ok(deletedPatent);

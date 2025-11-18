@@ -26,6 +26,7 @@ public class HonorRecordDTO {
     private Double baseScore;
     private Double computedScore;
     private List<String> evidenceFiles;
+    private String studentId;
     
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime createTime;
@@ -99,6 +100,14 @@ public class HonorRecordDTO {
         this.evidenceFiles = evidenceFiles;
     }
 
+    public String getStudentId() {
+        return studentId;
+    }
+
+    public void setStudentId(String studentId) {
+        this.studentId = studentId;
+    }
+
     public LocalDateTime getCreateTime() {
         return createTime;
     }
@@ -137,12 +146,18 @@ public class HonorRecordDTO {
         
         // 处理证据文件字符串转换为列表
         if (entity.getEvidenceFiles() != null && !entity.getEvidenceFiles().isEmpty()) {
-            List<String> files = Arrays.asList(entity.getEvidenceFiles().split(","));
+            // 使用Arrays.stream(...).toList()方法转换
+            List<String> files = Arrays.stream(entity.getEvidenceFiles().split(",")).toList();
             dto.setEvidenceFiles(files);
         }
         
         dto.setCreateTime(entity.getCreateTime());
         dto.setUpdateTime(entity.getUpdateTime());
+        
+        // 设置学生ID
+        if (entity.getStudent() != null) {
+            dto.setStudentId(entity.getStudent().getStudentId());
+        }
         
         return dto;
     }
@@ -169,6 +184,8 @@ public class HonorRecordDTO {
         if (dto.getEvidenceFiles() != null && !dto.getEvidenceFiles().isEmpty()) {
             String files = String.join(",", dto.getEvidenceFiles());
             entity.setEvidenceFiles(files);
+        } else {
+            entity.setEvidenceFiles("");
         }
         
         return entity;

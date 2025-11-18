@@ -12,8 +12,8 @@ import java.util.List;
  */
 public class ApplicationCreateDTO {
     
-    @NotNull(message = "学生ID不能为空")
-    private Long studentId;
+    @NotBlank(message = "学生ID不能为空")
+    private String studentId;
     
     @NotBlank(message = "申请类型不能为空")
     private String type;
@@ -35,7 +35,7 @@ public class ApplicationCreateDTO {
     }
     
     // 带参构造函数
-    public ApplicationCreateDTO(Long studentId, String type, String title, String description, Double points) {
+    public ApplicationCreateDTO(String studentId, String type, String title, String description, Double points) {
         this.studentId = studentId;
         this.type = type;
         this.title = title;
@@ -44,11 +44,11 @@ public class ApplicationCreateDTO {
     }
     
     // Getter和Setter方法
-    public Long getStudentId() {
+    public String getStudentId() {
         return studentId;
     }
     
-    public void setStudentId(Long studentId) {
+    public void setStudentId(String studentId) {
         this.studentId = studentId;
     }
     

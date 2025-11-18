@@ -31,7 +31,7 @@ public class PaperRecordController {
      * @return 论文记录列表
      */
     @GetMapping
-    public ResponseEntity<List<PaperRecordDTO>> getAllPapersByStudentId(@PathVariable Long studentId) {
+    public ResponseEntity<List<PaperRecordDTO>> getAllPapersByStudentId(@PathVariable String studentId) {
         try {
             List<PaperRecord> papers = paperRecordService.getPapersByStudentId(studentId);
             List<PaperRecordDTO> paperDTOs = papers.stream()
@@ -51,7 +51,7 @@ public class PaperRecordController {
      * @return 论文记录
      */
     @GetMapping("/{paperId}")
-    public ResponseEntity<PaperRecordDTO> getPaperById(@PathVariable Long studentId, @PathVariable Long paperId) {
+    public ResponseEntity<PaperRecordDTO> getPaperById(@PathVariable String studentId, @PathVariable Long paperId) {
         try {
             return paperRecordService.getPaperByIdAndStudentId(studentId, paperId)
                     .map(paper -> ResponseEntity.ok(PaperRecordDTO.fromEntity(paper)))
@@ -69,7 +69,7 @@ public class PaperRecordController {
      * @return 创建的论文记录
      */
     @PostMapping
-    public ResponseEntity<?> createPaper(@PathVariable Long studentId, @RequestBody PaperRecordDTO paperRecordDTO) {
+    public ResponseEntity<?> createPaper(@PathVariable String studentId, @RequestBody PaperRecordDTO paperRecordDTO) {
         try {
             // 将DTO转换为实体
             PaperRecord paperRecord = paperRecordDTO.toEntity();
@@ -100,7 +100,7 @@ public class PaperRecordController {
      * @return 更新后的论文记录
      */
     @PutMapping("/{paperId}")
-    public ResponseEntity<?> updatePaper(@PathVariable Long studentId, @PathVariable Long paperId, 
+    public ResponseEntity<?> updatePaper(@PathVariable String studentId, @PathVariable Long paperId, 
                                         @RequestBody PaperRecordDTO paperRecordDTO) {
         try {
             // 将DTO转换为实体
@@ -131,7 +131,7 @@ public class PaperRecordController {
      * @return 被删除的论文记录
      */
     @DeleteMapping("/{paperId}")
-    public ResponseEntity<?> deletePaper(@PathVariable Long studentId, @PathVariable Long paperId) {
+    public ResponseEntity<?> deletePaper(@PathVariable String studentId, @PathVariable Long paperId) {
         try {
             PaperRecord deletedPaper = paperRecordService.deletePaper(studentId, paperId);
             PaperRecordDTO responseDTO = PaperRecordDTO.fromEntity(deletedPaper);

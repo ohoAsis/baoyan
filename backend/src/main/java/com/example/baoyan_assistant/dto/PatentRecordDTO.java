@@ -19,6 +19,7 @@ public class PatentRecordDTO {
     private Long id;
     private String title;
     private String type;
+    private String studentId;
     
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate authorizationDate;
@@ -66,6 +67,14 @@ public class PatentRecordDTO {
 
     public void setType(String type) {
         this.type = type;
+    }
+
+    public String getStudentId() {
+        return studentId;
+    }
+
+    public void setStudentId(String studentId) {
+        this.studentId = studentId;
     }
 
     public LocalDate getAuthorizationDate() {
@@ -140,6 +149,12 @@ public class PatentRecordDTO {
         dto.setId(entity.getId());
         dto.setTitle(entity.getTitle());
         dto.setType(entity.getType());
+        
+        // 设置学生ID
+        if (entity.getStudent() != null) {
+            dto.setStudentId(entity.getStudent().getStudentId());
+        }
+        
         dto.setAuthorizationDate(entity.getAuthorizationDate());
         dto.setIsFirstAuthor(entity.getIsFirstAuthor());
         dto.setBaseScore(entity.getBaseScore());
@@ -147,7 +162,8 @@ public class PatentRecordDTO {
         
         // 处理证据文件字符串转换为列表
         if (entity.getEvidenceFiles() != null && !entity.getEvidenceFiles().isEmpty()) {
-            List<String> files = Arrays.asList(entity.getEvidenceFiles().split(","));
+            // 使用Arrays.stream(...).toList()方法转换
+            List<String> files = Arrays.stream(entity.getEvidenceFiles().split(",")).toList();
             dto.setEvidenceFiles(files);
         }
         
@@ -180,6 +196,8 @@ public class PatentRecordDTO {
         if (dto.getEvidenceFiles() != null && !dto.getEvidenceFiles().isEmpty()) {
             String files = String.join(",", dto.getEvidenceFiles());
             entity.setEvidenceFiles(files);
+        } else {
+            entity.setEvidenceFiles("");
         }
         
         return entity;

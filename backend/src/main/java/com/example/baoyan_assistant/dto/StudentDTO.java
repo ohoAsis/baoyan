@@ -9,7 +9,7 @@ import java.util.List;
  */
 public class StudentDTO {
     
-    private String id;
+    private Long id;
     private String studentId;
     private String name;
     private String gender;
@@ -75,8 +75,8 @@ public class StudentDTO {
     public static StudentDTO fromEntity(com.example.baoyan_assistant.entity.Student student) {
         StudentDTO dto = new StudentDTO();
         
-        // 将Long类型的id转换为String类型
-        dto.setId(student.getId() != null ? student.getId().toString() : null);
+        // 直接设置Long类型的id
+        dto.setId(student.getId());
         
         // 复制其他属性
         dto.setStudentId(student.getStudentId());
@@ -140,11 +140,11 @@ public class StudentDTO {
     }
     
     // Getter和Setter方法
-    public String getId() {
+    public Long getId() {
         return id;
     }
     
-    public void setId(String id) {
+    public void setId(Long id) {
         this.id = id;
     }
     

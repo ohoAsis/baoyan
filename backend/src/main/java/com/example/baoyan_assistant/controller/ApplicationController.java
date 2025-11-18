@@ -62,7 +62,7 @@ public class ApplicationController {
      * @return 申请列表
      */
     @GetMapping("/students/{studentId}/applications")
-    public ResponseEntity<List<ApplicationDTO>> getApplicationsByStudentId(@PathVariable Long studentId) {
+    public ResponseEntity<List<ApplicationDTO>> getApplicationsByStudentId(@PathVariable String studentId) {
         List<Application> applications = applicationService.getByStudentId(studentId);
         List<ApplicationDTO> applicationDTOs = applications.stream()
                 .map(ApplicationDTO::fromEntity)

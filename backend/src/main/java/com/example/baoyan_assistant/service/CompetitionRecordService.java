@@ -29,9 +29,9 @@ public class CompetitionRecordService {
      * @param studentId 学生ID
      * @return 竞赛记录DTO列表
      */
-    public List<CompetitionRecordDTO> getCompetitionsByStudentId(Long studentId) {
+    public List<CompetitionRecordDTO> getCompetitionsByStudentId(String studentId) {
         // 验证学生是否存在
-        Optional<Student> student = studentRepository.findById(studentId);
+        Optional<Student> student = studentRepository.findByStudentId(studentId);
         if (!student.isPresent()) {
             throw new RuntimeException("学生不存在，ID: " + studentId);
         }
@@ -48,9 +48,9 @@ public class CompetitionRecordService {
      * @param competitionId 竞赛记录ID
      * @return 竞赛记录DTO
      */
-    public CompetitionRecordDTO getCompetitionByIdAndStudentId(Long studentId, Long competitionId) {
+    public CompetitionRecordDTO getCompetitionByIdAndStudentId(String studentId, Long competitionId) {
         // 验证学生是否存在
-        Optional<Student> student = studentRepository.findById(studentId);
+        Optional<Student> student = studentRepository.findByStudentId(studentId);
         if (!student.isPresent()) {
             throw new RuntimeException("学生不存在，ID: " + studentId);
         }
@@ -69,9 +69,9 @@ public class CompetitionRecordService {
      * @param competitionDTO 竞赛记录DTO
      * @return 创建的竞赛记录DTO
      */
-    public CompetitionRecordDTO createCompetitionForStudent(Long studentId, CompetitionRecordDTO competitionDTO) {
+    public CompetitionRecordDTO createCompetitionForStudent(String studentId, CompetitionRecordDTO competitionDTO) {
         // 验证学生是否存在
-        Optional<Student> student = studentRepository.findById(studentId);
+        Optional<Student> student = studentRepository.findByStudentId(studentId);
         if (!student.isPresent()) {
             throw new RuntimeException("学生不存在，ID: " + studentId);
         }
@@ -90,9 +90,9 @@ public class CompetitionRecordService {
      * @param competitionDTO 更新的竞赛记录DTO
      * @return 更新后的竞赛记录DTO
      */
-    public CompetitionRecordDTO updateCompetition(Long studentId, Long competitionId, CompetitionRecordDTO competitionDTO) {
+    public CompetitionRecordDTO updateCompetition(String studentId, Long competitionId, CompetitionRecordDTO competitionDTO) {
         // 验证学生是否存在
-        Optional<Student> student = studentRepository.findById(studentId);
+        Optional<Student> student = studentRepository.findByStudentId(studentId);
         if (!student.isPresent()) {
             throw new RuntimeException("学生不存在，ID: " + studentId);
         }
@@ -128,9 +128,9 @@ public class CompetitionRecordService {
      * @param competitionId 竞赛记录ID
      * @return 被删除的竞赛记录DTO
      */
-    public CompetitionRecordDTO deleteCompetition(Long studentId, Long competitionId) {
+    public CompetitionRecordDTO deleteCompetition(String studentId, Long competitionId) {
         // 验证学生是否存在
-        Optional<Student> student = studentRepository.findById(studentId);
+        Optional<Student> student = studentRepository.findByStudentId(studentId);
         if (!student.isPresent()) {
             throw new RuntimeException("学生不存在，ID: " + studentId);
         }

@@ -17,7 +17,9 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class PaperRecordDTO {
     
-    private String id;
+    private Long id;
+    
+    private String studentId;
     
     private String title;
     
@@ -53,7 +55,7 @@ public class PaperRecordDTO {
     // 从实体转换为DTO
     public static PaperRecordDTO fromEntity(PaperRecord paperRecord) {
         PaperRecordDTO dto = new PaperRecordDTO();
-        dto.setId(paperRecord.getId() != null ? paperRecord.getId().toString() : null);
+        dto.setId(paperRecord.getId());
         dto.setTitle(paperRecord.getTitle());
         dto.setLevel(paperRecord.getLevel());
         dto.setPublication(paperRecord.getPublication());
@@ -66,9 +68,8 @@ public class PaperRecordDTO {
         
         // 处理证据文件
         if (paperRecord.getEvidenceFiles() != null && !paperRecord.getEvidenceFiles().isEmpty()) {
-            // 假设文件路径以逗号分隔
-            String[] files = paperRecord.getEvidenceFiles().split(",");
-            dto.setEvidenceFiles(Arrays.asList(files));
+            // 使用Arrays.stream(...).toList()方法转换
+            dto.setEvidenceFiles(Arrays.stream(paperRecord.getEvidenceFiles().split(",")).toList());
         } else {
             dto.setEvidenceFiles(new ArrayList<>());
         }
@@ -76,12 +77,18 @@ public class PaperRecordDTO {
         dto.setCreateTime(paperRecord.getCreateTime());
         dto.setUpdateTime(paperRecord.getUpdateTime());
         
+        // 设置学生ID
+        if (paperRecord.getStudent() != null) {
+            dto.setStudentId(paperRecord.getStudent().getStudentId());
+        }
+        
         return dto;
     }
     
     // 将DTO转换为实体
     public PaperRecord toEntity() {
         PaperRecord paperRecord = new PaperRecord();
+        paperRecord.setId(this.id);
         paperRecord.setTitle(this.title);
         paperRecord.setLevel(this.level);
         paperRecord.setPublication(this.publication);
@@ -95,18 +102,28 @@ public class PaperRecordDTO {
         // 处理证据文件
         if (this.evidenceFiles != null && !this.evidenceFiles.isEmpty()) {
             paperRecord.setEvidenceFiles(String.join(",", this.evidenceFiles));
+        } else {
+            paperRecord.setEvidenceFiles("");
         }
         
         return paperRecord;
     }
     
     // Getter和Setter方法
-    public String getId() {
+    public Long getId() {
         return id;
     }
     
-    public void setId(String id) {
+    public void setId(Long id) {
         this.id = id;
+    }
+    
+    public String getStudentId() {
+        return studentId;
+    }
+    
+    public void setStudentId(String studentId) {
+        this.studentId = studentId;
     }
     
     public String getTitle() {

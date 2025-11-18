@@ -178,7 +178,7 @@
     <ReviewPanel
       v-if="selectedApplication"
       :application="selectedApplication"
-      @review="handleReview"
+      @review-complete="handleReviewComplete"
       @close="selectedApplication = null"
     />
   </div>
@@ -240,22 +240,15 @@ onMounted(async () => {
   }
 });
 
-const handleReview = (
-  applicationId: string,
-  status: 'approved' | 'rejected',
-  comment: string
-) => {
-  applications.value = applications.value.map((app) =>
-    app.id === applicationId
-      ? {
-          ...app,
-          status,
-          reviewComment: comment,
-          reviewedAt: new Date().toISOString().split('T')[0],
-        }
-      : app
-  );
-  selectedApplication.value = null;
+const handleReviewComplete = async () => {
+  try {
+    // 重新获取申请列表以刷新数据
+    const applicationsData = await applicationsApi.list();
+    applications.value = applicationsData;
+  } catch (error) {
+    console.error('刷新申请列表失败:', error);
+    // 可以在这里添加错误提示
+  }
 };
 
 const getStudentApplications = (studentId: string) => {

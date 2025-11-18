@@ -26,7 +26,7 @@ public class CompetitionRecordController {
      * @return 竞赛记录列表
      */
     @GetMapping
-    public ResponseEntity<List<CompetitionRecordDTO>> getCompetitionsByStudentId(@PathVariable Long id) {
+    public ResponseEntity<List<CompetitionRecordDTO>> getCompetitionsByStudentId(@PathVariable String id) {
         try {
             List<CompetitionRecordDTO> competitions = competitionRecordService.getCompetitionsByStudentId(id);
             return ResponseEntity.ok(competitions);
@@ -43,7 +43,7 @@ public class CompetitionRecordController {
      */
     @GetMapping("/{competitionId}")
     public ResponseEntity<CompetitionRecordDTO> getCompetitionByIdAndStudentId(
-            @PathVariable Long id, @PathVariable Long competitionId) {
+            @PathVariable String id, @PathVariable Long competitionId) {
         try {
             CompetitionRecordDTO competition = competitionRecordService.getCompetitionByIdAndStudentId(id, competitionId);
             return ResponseEntity.ok(competition);
@@ -60,7 +60,7 @@ public class CompetitionRecordController {
      */
     @PostMapping
     public ResponseEntity<CompetitionRecordDTO> createCompetitionForStudent(
-            @PathVariable Long id, @RequestBody CompetitionRecordDTO competitionDTO) {
+            @PathVariable String id, @RequestBody CompetitionRecordDTO competitionDTO) {
         try {
             CompetitionRecordDTO createdCompetition = competitionRecordService.createCompetitionForStudent(id, competitionDTO);
             return ResponseEntity.status(HttpStatus.CREATED).body(createdCompetition);
@@ -78,7 +78,7 @@ public class CompetitionRecordController {
      */
     @PutMapping("/{competitionId}")
     public ResponseEntity<CompetitionRecordDTO> updateCompetition(
-            @PathVariable Long id, @PathVariable Long competitionId, @RequestBody CompetitionRecordDTO competitionDTO) {
+            @PathVariable String id, @PathVariable Long competitionId, @RequestBody CompetitionRecordDTO competitionDTO) {
         try {
             CompetitionRecordDTO updatedCompetition = competitionRecordService.updateCompetition(id, competitionId, competitionDTO);
             return ResponseEntity.ok(updatedCompetition);
@@ -95,7 +95,7 @@ public class CompetitionRecordController {
      */
     @DeleteMapping("/{competitionId}")
     public ResponseEntity<CompetitionRecordDTO> deleteCompetition(
-            @PathVariable Long id, @PathVariable Long competitionId) {
+            @PathVariable String id, @PathVariable Long competitionId) {
         try {
             CompetitionRecordDTO deletedCompetition = competitionRecordService.deleteCompetition(id, competitionId);
             return ResponseEntity.ok(deletedCompetition);

@@ -29,9 +29,9 @@ public class HonorRecordService {
      * @param studentId 学生ID
      * @return 荣誉记录DTO列表
      */
-    public List<HonorRecordDTO> getHonorsByStudentId(Long studentId) {
+    public List<HonorRecordDTO> getHonorsByStudentId(String studentId) {
         // 验证学生是否存在
-        Optional<Student> student = studentRepository.findById(studentId);
+        Optional<Student> student = studentRepository.findByStudentId(studentId);
         if (!student.isPresent()) {
             throw new RuntimeException("学生不存在，ID: " + studentId);
         }
@@ -48,9 +48,9 @@ public class HonorRecordService {
      * @param honorId 荣誉记录ID
      * @return 荣誉记录DTO
      */
-    public HonorRecordDTO getHonorByIdAndStudentId(Long studentId, Long honorId) {
+    public HonorRecordDTO getHonorByIdAndStudentId(String studentId, Long honorId) {
         // 验证学生是否存在
-        Optional<Student> student = studentRepository.findById(studentId);
+        Optional<Student> student = studentRepository.findByStudentId(studentId);
         if (!student.isPresent()) {
             throw new RuntimeException("学生不存在，ID: " + studentId);
         }
@@ -69,9 +69,9 @@ public class HonorRecordService {
      * @param honorDTO 荣誉记录DTO
      * @return 创建的荣誉记录DTO
      */
-    public HonorRecordDTO createHonorForStudent(Long studentId, HonorRecordDTO honorDTO) {
+    public HonorRecordDTO createHonorForStudent(String studentId, HonorRecordDTO honorDTO) {
         // 验证学生是否存在
-        Optional<Student> student = studentRepository.findById(studentId);
+        Optional<Student> student = studentRepository.findByStudentId(studentId);
         if (!student.isPresent()) {
             throw new RuntimeException("学生不存在，ID: " + studentId);
         }
@@ -90,9 +90,9 @@ public class HonorRecordService {
      * @param honorDTO 更新的荣誉记录DTO
      * @return 更新后的荣誉记录DTO
      */
-    public HonorRecordDTO updateHonor(Long studentId, Long honorId, HonorRecordDTO honorDTO) {
+    public HonorRecordDTO updateHonor(String studentId, Long honorId, HonorRecordDTO honorDTO) {
         // 验证学生是否存在
-        Optional<Student> student = studentRepository.findById(studentId);
+        Optional<Student> student = studentRepository.findByStudentId(studentId);
         if (!student.isPresent()) {
             throw new RuntimeException("学生不存在，ID: " + studentId);
         }
@@ -125,9 +125,9 @@ public class HonorRecordService {
      * @param honorId 荣誉记录ID
      * @return 被删除的荣誉记录DTO
      */
-    public HonorRecordDTO deleteHonor(Long studentId, Long honorId) {
+    public HonorRecordDTO deleteHonor(String studentId, Long honorId) {
         // 验证学生是否存在
-        Optional<Student> student = studentRepository.findById(studentId);
+        Optional<Student> student = studentRepository.findByStudentId(studentId);
         if (!student.isPresent()) {
             throw new RuntimeException("学生不存在，ID: " + studentId);
         }
