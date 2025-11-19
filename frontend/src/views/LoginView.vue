@@ -13,7 +13,7 @@ const { login } = useAuth();
 
 const handleLogin = (user: User) => {
   login(user);
-  router.push(user.role === 'student' ? '/student' : '/admin');
+  router.push(user.role === 'student' ? '/student' : '/reviewer');
 };
 </script>
 

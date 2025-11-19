@@ -1,14 +1,18 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import LoginView from '../views/LoginView.vue';
 import StudentDashboardView from '../views/StudentDashboardView.vue';
-import AdminDashboardView from '../views/AdminDashboardView.vue';
+import ReviewerDashboardView from '../views/ReviewerDashboardView.vue';
 import { getCurrentUser } from '../stores/auth';
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHistory(),
   routes: [
     {
       path: '/',
+      redirect: '/login',
+    },
+    {
+      path: '/login',
       name: 'login',
       component: LoginView,
     },
@@ -19,10 +23,10 @@ const router = createRouter({
       meta: { requiresAuth: true, role: 'student' },
     },
     {
-      path: '/admin',
-      name: 'admin-dashboard',
-      component: AdminDashboardView,
-      meta: { requiresAuth: true, role: 'admin' },
+      path: '/reviewer',
+      name: 'reviewer-dashboard',
+      component: ReviewerDashboardView,
+      meta: { requiresAuth: true, role: 'reviewer' },
     },
   ],
 });
@@ -38,12 +42,12 @@ router.beforeEach((to, from, next) => {
   }
 
   if (requiredRole && currentUser && currentUser.role !== requiredRole) {
-    next({ path: currentUser.role === 'student' ? '/student' : '/admin' });
+    next({ path: currentUser.role === 'student' ? '/student' : '/reviewer' });
     return;
   }
 
   if (to.path === '/' && currentUser) {
-    next({ path: currentUser.role === 'student' ? '/student' : '/admin' });
+    next({ path: currentUser.role === 'student' ? '/student' : '/reviewer' });
     return;
   }
 

@@ -14,11 +14,21 @@
             </CardDescription>
           </div>
           <div class="flex space-x-2">
-            <Button variant="outline" size="sm" @click="handleExportExcel">
+            <Button 
+              variant="outline" 
+              size="sm"
+              class="transition-all duration-200 hover:bg-green-600 hover:text-white hover:border-green-600"
+              @click="handleExportExcel"
+            >
               <FileSpreadsheet class="h-4 w-4 mr-2" />
               导出Excel
             </Button>
-            <Button variant="outline" size="sm" @click="handleExportPDF">
+            <Button 
+              variant="outline" 
+              size="sm"
+              class="transition-all duration-200 hover:bg-green-600 hover:text-white hover:border-green-600"
+              @click="handleExportPDF"
+            >
               <FileDown class="h-4 w-4 mr-2" />
               导出PDF
             </Button>
@@ -40,9 +50,9 @@
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead class="w-20">排名</TableHead>
-                <TableHead>学号</TableHead>
-                <TableHead>姓名</TableHead>
+                <TableHead class="text-center">排名</TableHead>
+                <TableHead class="text-center">学号</TableHead>
+                <TableHead class="text-center">姓名</TableHead>
                 <TableHead class="text-center">总分</TableHead>
                 <TableHead class="text-center">通过项目数</TableHead>
                 <TableHead class="text-center">最后更新</TableHead>
@@ -70,7 +80,7 @@
                 </TableCell>
                 <TableCell>{{ student.studentName }}</TableCell>
                 <TableCell class="text-center">
-                  <span class="text-lg">{{ student.totalPoints }}</span>
+                  <span class="text-lg font-semibold">{{ student.totalPoints }}</span>
                   <span class="text-sm text-gray-500 ml-1">分</span>
                 </TableCell>
                 <TableCell class="text-center">{{ student.approvedApplications }}</TableCell>
@@ -108,15 +118,15 @@ import TableHead from './ui/TableHead.vue';
 import TableHeader from './ui/TableHeader.vue';
 import TableRow from './ui/TableRow.vue';
 import Badge from './ui/Badge.vue';
-import { studentsApi } from '../api/students';
+import { studentsApi, applicationsApi } from '../api';
 
 interface RankingData {
-	rank: number;
-	studentId: string;
-	studentName: string;
-	totalPoints: number;
-	approvedApplications: number;
-	lastUpdate: string;
+  rank: number;
+  studentId: string;
+  studentName: string;
+  totalPoints: number;
+  approvedApplications: number;
+  lastUpdate: string;
 }
 
 const props = defineProps<{
@@ -126,39 +136,67 @@ const props = defineProps<{
 const rankings = ref<RankingData[]>([]);
 const publishDate = ref('');
 
+// 计算学生的总加分
+const calculateTotalPoints = async (student: any) => {
+  try {
+    // 获取学生的所有申请
+    const applications = await applicationsApi.getByStudentId(student.studentId);
+    
+    // 过滤状态为"approved"的申请
+    const approvedApplications = applications.filter(app => app.status === 'approved');
+    
+    // 计算已通过申请的points总和
+    const totalApprovedPoints = approvedApplications.reduce((sum, app) => sum + (app.points || 0), 0);
+    
+    return {
+      totalPoints: totalApprovedPoints,
+      approvedApplications: approvedApplications.length
+    };
+  } catch (error) {
+    console.error(`计算学生 ${student.studentId} 的总分失败:`, error);
+    return {
+      totalPoints: 0,
+      approvedApplications: 0
+    };
+  }
+};
+
 const loadFromBackend = async () => {
-	try {
-		const res = await studentsApi.list();
-		const list = Array.isArray(res.data) ? res.data : [];
-		// 由于暂未接入申请/审核数据，这里以0分占位，rank 按姓名排序示例
-		const mapped: RankingData[] = list
-			.map((s: any) => ({
-				studentId: s.studentId ?? '',
-				studentName: s.name ?? '',
-				totalPoints: 0,
-				approvedApplications: 0,
-				lastUpdate: new Date().toISOString().split('T')[0],
-				rank: 0
-			}))
-			.sort((a, b) => a.studentId.localeCompare(b.studentId))
-			.map((s, idx) => ({ ...s, rank: idx + 1 }));
-		rankings.value = mapped;
-		publishDate.value = new Date().toLocaleDateString('zh-CN');
-	} catch (e) {
-		// 回退到原有的演示数据
-		const mockRankings: RankingData[] = [
-			{ rank: 1, studentId: '2021001001', studentName: '张三', totalPoints: 35, approvedApplications: 2, lastUpdate: '2024-02-25' },
-			{ rank: 2, studentId: '2021001002', studentName: '李四', totalPoints: 28, approvedApplications: 2, lastUpdate: '2024-02-24' },
-			{ rank: 3, studentId: '2021001003', studentName: '王五', totalPoints: 22, approvedApplications: 1, lastUpdate: '2024-02-23' },
-			{ rank: 4, studentId: '2021001004', studentName: '赵六', totalPoints: 18, approvedApplications: 1, lastUpdate: '2024-02-22' },
-			{ rank: 5, studentId: '2021001005', studentName: '钱七', totalPoints: 15, approvedApplications: 1, lastUpdate: '2024-02-21' },
-			{ rank: 6, studentId: '2021001006', studentName: '孙八', totalPoints: 12, approvedApplications: 1, lastUpdate: '2024-02-20' },
-			{ rank: 7, studentId: '2021001007', studentName: '周九', totalPoints: 8, approvedApplications: 1, lastUpdate: '2024-02-19' },
-			{ rank: 8, studentId: '2021001008', studentName: '吴十', totalPoints: 5, approvedApplications: 1, lastUpdate: '2024-02-18' }
-		];
-		rankings.value = mockRankings;
-		publishDate.value = '2024年2月25日';
-	}
+  try {
+    // 获取学生列表
+    const students = await studentsApi.list();
+    
+    // 为每个学生计算总分
+    const rankingsData = await Promise.all(
+      students.map(async (student) => {
+        const pointsData = await calculateTotalPoints(student);
+        
+        return {
+          rank: 0, // 稍后会重新计算排名
+          studentId: student.studentId,
+          studentName: student.name,
+          totalPoints: pointsData.totalPoints,
+          approvedApplications: pointsData.approvedApplications,
+          lastUpdate: new Date().toISOString().split('T')[0]
+        };
+      })
+    );
+    
+    // 按总分降序排序并计算排名
+    const sortedRankings = rankingsData
+      .sort((a, b) => b.totalPoints - a.totalPoints)
+      .map((student, index) => ({
+        ...student,
+        rank: index + 1
+      }));
+    
+    rankings.value = sortedRankings;
+    publishDate.value = new Date().toLocaleDateString('zh-CN');
+  } catch (error) {
+    console.error('从后端加载排名数据失败:', error);
+    rankings.value = [];
+    publishDate.value = new Date().toLocaleDateString('zh-CN');
+  }
 };
 
 onMounted(() => {

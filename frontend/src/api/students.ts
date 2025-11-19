@@ -1,8 +1,5 @@
-import axios from 'axios'
-
-const api = axios.create({
-	baseURL: '/api'
-})
+import apiClient from './client';
+import { Student } from '../types/index';
 
 export interface StudentPayload {
 	studentId: string
@@ -15,10 +12,27 @@ export interface StudentPayload {
 }
 
 export const studentsApi = {
-	list: () => api.get('/students'),
-	get: (id: number) => api.get(`/students/${id}`),
-	create: (data: StudentPayload) => api.post('/students', data),
-	update: (id: number, data: Partial<StudentPayload>) => api.put(`/students/${id}`, data),
-	remove: (id: number) => api.delete(`/students/${id}`),
-	exists: (studentId: string) => api.get(`/students/check/studentId/${studentId}`)
+	list: async (): Promise<Student[]> => {
+		const response = await apiClient.get<Student[]>('/students');
+		return response.data;
+	},
+	get: async (id: string): Promise<Student> => {
+		const response = await apiClient.get<Student>(`/students/${id}`);
+		return response.data;
+	},
+	create: async (data: StudentPayload): Promise<Student> => {
+		const response = await apiClient.post<Student>('/students', data);
+		return response.data;
+	},
+	update: async (id: string, data: Partial<StudentPayload>): Promise<Student> => {
+		const response = await apiClient.put<Student>(`/students/${id}`, data);
+		return response.data;
+	},
+	remove: async (id: string): Promise<void> => {
+		await apiClient.delete(`/students/${id}`);
+	},
+	exists: async (studentId: string): Promise<boolean> => {
+		const response = await apiClient.get<{exists: boolean}>(`/students/check/${studentId}`);
+		return response.data.exists;
+	}
 }
