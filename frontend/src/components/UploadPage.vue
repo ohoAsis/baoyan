@@ -26,7 +26,7 @@
     <!-- 四个上传卡片区域 -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <Card
-        v-for="category in UPLOAD_CATEGORIES"
+        v-for="category in categories"
         :key="category.id"
         class="hover:shadow-lg transition-shadow"
       >
@@ -203,10 +203,11 @@
                 !formData.description ||
                 formData.points <= 0 ||
                 formData.points > maxPoints ||
-                files.length === 0
+                files.length === 0 ||
+                isSubmitting
               "
             >
-              提交申请
+              {{ isSubmitting ? '提交中...' : '提交申请' }}
             </Button>
           </div>
         </div>
@@ -217,7 +218,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import type { Application } from '../types';
+import type { Application, CreateApplicationRequest } from '../types';
 import { Trophy, FileText, Lightbulb, Award, Upload, X } from 'lucide-vue-next';
 import Card from './ui/Card.vue';
 import CardContent from './ui/CardContent.vue';
@@ -236,6 +237,8 @@ import SelectItem from './ui/SelectItem.vue';
 import SelectTrigger from './ui/SelectTrigger.vue';
 import SelectValue from './ui/SelectValue.vue';
 import Progress from './ui/Progress.vue';
+import { applicationsApi } from '../api/applications';
+import { useAuth } from '../stores/auth';
 
 type UploadCategory = 'competition' | 'paper' | 'patent' | 'comprehensive';
 
@@ -252,7 +255,8 @@ interface CategoryConfig {
   }>;
 }
 
-const UPLOAD_CATEGORIES: CategoryConfig[] = [
+// 分类配置
+const categories: CategoryConfig[] = [
   {
     id: 'competition',
     title: '竞赛加分',
@@ -319,13 +323,14 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  submit: [
-    application: Omit<Application, 'id' | 'studentId' | 'studentName' | 'status' | 'submittedAt'>
-  ];
+  submit: [application: Application];
 }>();
+
+const { currentUser } = useAuth();
 
 const showUploadDialog = ref(false);
 const currentCategory = ref<CategoryConfig | null>(null);
+const isSubmitting = ref(false);
 const formData = ref({
   type: '',
   subType: '',
@@ -354,7 +359,6 @@ const selectedSubType = computed(() => {
 const maxPoints = computed(() => selectedSubType.value?.maxPoints || 0);
 
 const handleOpenUpload = (category: CategoryConfig) => {
-  console.log('Opening upload dialog for category:', category);
   currentCategory.value = category;
   formData.value = {
     type: category.title,
@@ -365,7 +369,6 @@ const handleOpenUpload = (category: CategoryConfig) => {
   };
   files.value = [];
   showUploadDialog.value = true;
-  console.log('showUploadDialog.value:', showUploadDialog.value);
 };
 
 const handleCloseDialog = () => {
@@ -397,7 +400,7 @@ const removeFile = (index: number) => {
   files.value = files.value.filter((_, i) => i !== index);
 };
 
-const handleSubmit = () => {
+const handleSubmit = async () => {
   if (!formData.value.subType || !formData.value.title || !formData.value.description || formData.value.points <= 0) {
     alert('请填写完整的申请信息');
     return;
@@ -413,14 +416,36 @@ const handleSubmit = () => {
     return;
   }
 
-  emit('submit', {
-    type: formData.value.type,
-    title: formData.value.title,
-    description: `${formData.value.subType} - ${formData.value.description}`,
-    points: formData.value.points,
-    files: files.value,
-  });
+  try {
+    isSubmitting.value = true;
+    
+    // 创建符合 CreateApplicationRequest 接口的请求对象
+    const request: CreateApplicationRequest = {
+      studentId: props.studentId, // 使用固定的 studentId
+      studentName: currentUser.value?.name || props.studentName, // 从 authStore.user.name 读取
+      type: formData.value.subType, // 使用具体类型而不是大类
+      title: formData.value.title,
+      description: formData.value.description,
+      points: formData.value.points,
+      files: files.value, // 使用文件名数组
+    };
 
-  handleCloseDialog();
+    // 调用 applicationsApi.create() 提交申请
+    const newApplication = await applicationsApi.create(request);
+    
+    // 触发 submit 事件，通知父组件
+    emit('submit', newApplication);
+    
+    // 显示成功提示
+    alert('申请提交成功！');
+    
+    // 关闭对话框并重置表单
+    handleCloseDialog();
+  } catch (error) {
+    console.error('提交申请失败:', error);
+    alert('提交申请失败，请稍后重试');
+  } finally {
+    isSubmitting.value = false;
+  }
 };
 </script>

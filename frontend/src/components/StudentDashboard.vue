@@ -60,7 +60,7 @@
               :student-id="user.studentId!"
               :major="user.major || '未设置专业'"
               :applications="applications"
-              @submit="handleApplicationSubmit"
+              @submit="reloadApplications"
             />
           </div>
 
@@ -135,6 +135,8 @@ import TableHeader from './ui/TableHeader.vue';
 import TableRow from './ui/TableRow.vue';
 import UploadPage from './UploadPage.vue';
 import StatusBadge from './StatusBadge.vue';
+import { applicationsApi } from '../api/applications';
+import { useAuth } from '../stores/auth';
 
 const props = defineProps<{
   user: User;
@@ -146,76 +148,62 @@ const emit = defineEmits<{
 
 const applications = ref<Application[]>([]);
 const activeTab = ref('upload');
+const { currentUser } = useAuth();
 
 const tabs = [
   { value: 'upload', label: '材料上传', icon: Upload },
   { value: 'applications', label: '我的申请', icon: FileText }
 ];
 
-onMounted(() => {
-  const mockApplications: Application[] = [
-    {
-      id: '1',
-      studentId: props.user.studentId!,
-      studentName: props.user.name,
-      type: '学科竞赛',
-      title: '全国大学生数学建模竞赛',
-      description: '获得省级一等奖',
-      points: 15,
-      status: 'approved',
-      submittedAt: '2024-01-15',
-      reviewedAt: '2024-01-18',
-      reviewComment: '材料齐全，符合加分标准',
-      files: ['竞赛证书.pdf'],
-    },
-    {
-      id: '2',
-      studentId: props.user.studentId!,
-      studentName: props.user.name,
-      type: '学术论文',
-      title: 'AI在教育领域的应用研究',
-      description: '第一作者，发表在核心期刊',
-      points: 20,
-      status: 'pending',
-      submittedAt: '2024-02-20',
-      files: ['论文截图.png', '期刊封面.jpg'],
-    },
-    {
-      id: '3',
-      studentId: props.user.studentId!,
-      studentName: props.user.name,
-      type: '科研项目',
-      title: '国家级大学生创新创业训练计划',
-      description: '项目负责人，已结题',
-      points: 10,
-      status: 'rejected',
-      submittedAt: '2024-01-10',
-      reviewedAt: '2024-01-12',
-      reviewComment: '缺少结题报告，请补充相关材料',
-      files: ['项目申报书.pdf'],
-    },
-  ];
-  applications.value = mockApplications;
-});
-
-const handleApplicationSubmit = (
-  newApplication: Omit<Application, 'id' | 'studentId' | 'studentName' | 'status' | 'submittedAt'>
-) => {
-  const application: Application = {
-    ...newApplication,
-    id: Math.random().toString(36).substr(2, 9),
-    studentId: props.user.studentId!,
-    studentName: props.user.name,
-    status: 'pending',
-    submittedAt: new Date().toISOString().split('T')[0],
-  };
-  applications.value.push(application);
-
-  const toastEvent = new CustomEvent('show-toast', {
-    detail: { message: '申请提交成功！等待审核老师审核' },
-  });
-  window.dispatchEvent(toastEvent);
+// 从后端加载申请数据
+const reloadApplications = async () => {
+  try {
+    // 获取当前登录学生的 studentId
+    const studentId = currentUser.value?.studentId || props.user.studentId;
+    
+    if (!studentId) {
+      console.error('无法获取学生ID');
+      return;
+    }
+    
+    // 调用 API 获取申请数据
+    const applicationsData = await applicationsApi.getByStudentId(studentId);
+    
+    // 处理返回的数据，适配类型
+    applications.value = applicationsData.map(app => {
+      // 处理 files 字段，如果是字符串则转换为数组
+      let files: string[] = [];
+      if (typeof app.files === 'string') {
+        try {
+          files = JSON.parse(app.files);
+        } catch (e) {
+          console.error('解析 files 字段失败:', e);
+          files = [];
+        }
+      } else if (Array.isArray(app.files)) {
+        files = app.files;
+      }
+      
+      // 处理 studentId，如果存在 student.studentId 则使用它
+      let studentId = app.studentId;
+      if (app.student && typeof app.student === 'object' && app.student.studentId) {
+        studentId = app.student.studentId;
+      }
+      
+      return {
+        ...app,
+        studentId,
+        files
+      };
+    });
+  } catch (error) {
+    console.error('加载申请数据失败:', error);
+  }
 };
+
+onMounted(() => {
+  reloadApplications();
+});
 
 const handleLogout = () => {
   emit('logout');

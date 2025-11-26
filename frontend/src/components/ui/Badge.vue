@@ -14,9 +14,9 @@ const props = defineProps<{
 
 function getVariantClasses() {
   const classes: Record<string, string> = {
-    'default': 'border-transparent bg-primary text-primary-foreground',
-    'secondary': 'border-transparent bg-secondary text-secondary-foreground',
-    'destructive': 'border-transparent bg-destructive text-white',
+    'default': 'border-transparent bg-green-500 text-white',
+    'secondary': 'border-transparent bg-yellow-500 text-black',
+    'destructive': 'border-transparent bg-red-500 text-white',
     'outline': 'text-foreground'
   };
   return classes[props.variant || 'default'] || classes['default'];
