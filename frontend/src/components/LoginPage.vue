@@ -152,8 +152,8 @@ const handleLogin = async () => {
     const mockUser: User = {
       id: Math.random().toString(36).substr(2, 9),
       name: username.value,
-      studentId: role.value === 'student' ? '2021' + Math.random().toString().substr(2, 6) : undefined,
-      major: role.value === 'student' ? '计算机科学与技术' : undefined,
+      studentId: role.value === 'student' ? '2021001001' : undefined,
+      major: role.value === 'student' ? '软件工程' : undefined,
       role: role.value,
     };
 
