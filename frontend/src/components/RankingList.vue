@@ -61,7 +61,7 @@
             </TableHeader>
             <TableBody>
               <TableRow
-                v-for="student in rankings"
+                v-for="student in displayedRankings"
                 :key="student.studentId"
                 :class="isCurrentUser(student.studentId) ? 'bg-blue-50' : ''"
               >
@@ -94,7 +94,14 @@
 
           <div class="text-center space-y-2">
             <p class="text-sm text-gray-500">共有 {{ rankings.length }} 名学生参与排名</p>
-            <Button variant="outline" size="sm">查看完整排名</Button>
+            <Button 
+              variant="outline" 
+              size="sm"
+              @click="showFullRanking = !showFullRanking"
+              class="transition-all duration-200 hover:bg-blue-600 hover:text-white hover:border-blue-600"
+            >
+              {{ showFullRanking ? '收起排名' : '查看完整排名' }}
+            </Button>
           </div>
         </div>
       </CardContent>
@@ -103,8 +110,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, h } from 'vue';
+import { ref, onMounted, h, computed } from 'vue';
 import { Trophy, Medal, Award, Calendar, FileDown, FileSpreadsheet } from 'lucide-vue-next';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import Card from './ui/Card.vue';
 import CardContent from './ui/CardContent.vue';
 import CardDescription from './ui/CardDescription.vue';
@@ -135,6 +145,7 @@ const props = defineProps<{
 
 const rankings = ref<RankingData[]>([]);
 const publishDate = ref('');
+const showFullRanking = ref(false);
 
 // 计算学生的总加分
 const calculateTotalPoints = async (student: any) => {
@@ -220,11 +231,208 @@ const isCurrentUser = (studentId: string) => {
 	return props.currentUserId === studentId;
 };
 
+// 显示的排名列表：默认只显示前3名，点击后显示全部
+const displayedRankings = computed(() => {
+	if (showFullRanking.value) {
+		return rankings.value;
+	}
+	return rankings.value.slice(0, 3);
+});
+
 const handleExportExcel = () => {
-	alert('正在导出Excel文件...\n\n这是演示功能，实际应用中会生成包含排名数据的Excel文件');
+	try {
+		// 准备Excel数据
+		const excelData = rankings.value.map((student, index) => ({
+			排名: student.rank,
+			学号: student.studentId,
+			姓名: student.studentName,
+			总分: student.totalPoints,
+			通过项目数: student.approvedApplications,
+			最后更新: student.lastUpdate,
+			状态: student.rank <= 3 ? '前三名' : student.rank <= 10 ? '前十名' : '其他'
+		}));
+
+		// 创建工作簿
+		const wb = XLSX.utils.book_new();
+		
+		// 创建工作表
+		const ws = XLSX.utils.json_to_sheet(excelData);
+		
+		// 设置列宽
+		const colWidths = [
+			{ wch: 8 },  // 排名
+			{ wch: 15 }, // 学号
+			{ wch: 12 }, // 姓名
+			{ wch: 10 }, // 总分
+			{ wch: 12 }, // 通过项目数
+			{ wch: 12 }, // 最后更新
+			{ wch: 10 }  // 状态
+		];
+		ws['!cols'] = colWidths;
+		
+		// 添加工作表到工作簿
+		XLSX.utils.book_append_sheet(wb, ws, '保研加分排名');
+		
+		// 生成文件名
+		const fileName = `保研加分排名_${publishDate.value.replace(/\//g, '-')}.xlsx`;
+		
+		// 导出文件
+		XLSX.writeFile(wb, fileName);
+		
+		console.log('Excel文件导出成功:', fileName);
+	} catch (error) {
+		console.error('导出Excel文件失败:', error);
+		alert('导出Excel文件失败，请稍后重试');
+	}
 };
 
-const handleExportPDF = () => {
-	alert('正在导出PDF文件...\n\n这是演示功能，实际应用中会生成包含排名数据的PDF文件');
+const handleExportPDF = async () => {
+	try {
+		// 创建临时容器用于导出
+		const exportContainer = document.createElement('div');
+		exportContainer.style.position = 'absolute';
+		exportContainer.style.left = '-9999px';
+		exportContainer.style.width = '1200px';
+		exportContainer.style.backgroundColor = 'white';
+		exportContainer.style.padding = '20px';
+		exportContainer.style.fontFamily = 'Arial, "Microsoft YaHei", "SimHei", sans-serif';
+		
+		// 添加标题
+		const title = document.createElement('h1');
+		title.textContent = '保研加分排名公示';
+		title.style.fontSize = '24px';
+		title.style.fontWeight = 'bold';
+		title.style.marginBottom = '10px';
+		title.style.textAlign = 'center';
+		exportContainer.appendChild(title);
+		
+		// 添加副标题
+		const subtitle = document.createElement('div');
+		subtitle.style.fontSize = '14px';
+		subtitle.style.color = '#666';
+		subtitle.style.marginBottom = '20px';
+		subtitle.style.textAlign = 'center';
+		subtitle.innerHTML = `公示时间：${publishDate.value}<br>共 ${rankings.value.length} 名学生参与排名`;
+		exportContainer.appendChild(subtitle);
+		
+		// 创建表格
+		const table = document.createElement('table');
+		table.style.width = '100%';
+		table.style.borderCollapse = 'collapse';
+		table.style.fontSize = '12px';
+		
+		// 表头
+		const thead = document.createElement('thead');
+		const headerRow = document.createElement('tr');
+		headerRow.style.backgroundColor = '#3b82f6';
+		headerRow.style.color = 'white';
+		headerRow.style.fontWeight = 'bold';
+		
+		const headers = ['排名', '学号', '姓名', '总分', '通过项目数', '最后更新', '状态'];
+		headers.forEach(headerText => {
+			const th = document.createElement('th');
+			th.textContent = headerText;
+			th.style.padding = '10px';
+			th.style.border = '1px solid #ddd';
+			th.style.textAlign = 'center';
+			headerRow.appendChild(th);
+		});
+		thead.appendChild(headerRow);
+		table.appendChild(thead);
+		
+		// 表格内容
+		const tbody = document.createElement('tbody');
+		rankings.value.forEach((student, index) => {
+			const row = document.createElement('tr');
+			if (index % 2 === 0) {
+				row.style.backgroundColor = '#f9fafb';
+			}
+			
+			const cells = [
+				student.rank.toString(),
+				student.studentId,
+				student.studentName,
+				student.totalPoints.toString(),
+				student.approvedApplications.toString(),
+				student.lastUpdate,
+				student.rank <= 3 ? '前三名' : student.rank <= 10 ? '前十名' : '其他'
+			];
+			
+			cells.forEach(cellText => {
+				const td = document.createElement('td');
+				td.textContent = cellText;
+				td.style.padding = '8px';
+				td.style.border = '1px solid #ddd';
+				td.style.textAlign = 'center';
+				row.appendChild(td);
+			});
+			
+			tbody.appendChild(row);
+		});
+		table.appendChild(tbody);
+		exportContainer.appendChild(table);
+		
+		// 添加到页面
+		document.body.appendChild(exportContainer);
+		
+		// 转换为canvas
+		const canvas = await html2canvas(exportContainer, {
+			scale: 2,
+			useCORS: true,
+			backgroundColor: '#ffffff',
+			logging: false
+		});
+		
+		// 从页面移除临时容器
+		document.body.removeChild(exportContainer);
+		
+		// 创建PDF
+		const imgWidth = 297; // A4横向宽度（mm）
+		const imgHeight = (canvas.height * imgWidth) / canvas.width;
+		const doc = new jsPDF('landscape', 'mm', 'a4');
+		
+		// 如果内容超过一页，需要分页
+		const pageHeight = doc.internal.pageSize.getHeight();
+		let heightLeft = imgHeight;
+		let position = 0;
+		
+		// 添加第一页
+		doc.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+		heightLeft -= pageHeight;
+		
+		// 如果内容超过一页，添加后续页面
+		while (heightLeft >= 0) {
+			position = heightLeft - imgHeight;
+			doc.addPage();
+			doc.addImage(canvas.toDataURL('image/png'), 'PNG', 0, position, imgWidth, imgHeight);
+			heightLeft -= pageHeight;
+		}
+		
+		// 添加页脚
+		const pageCount = doc.getNumberOfPages();
+		for (let i = 1; i <= pageCount; i++) {
+			doc.setPage(i);
+			// 使用英文页脚避免字体问题
+			doc.setFontSize(8);
+			doc.setTextColor(150, 150, 150);
+			doc.text(
+				`Page ${i} / ${pageCount}`,
+				doc.internal.pageSize.getWidth() / 2,
+				doc.internal.pageSize.getHeight() - 10,
+				{ align: 'center' }
+			);
+		}
+		
+		// 生成文件名
+		const fileName = `保研加分排名_${publishDate.value.replace(/\//g, '-')}.pdf`;
+		
+		// 保存文件
+		doc.save(fileName);
+		
+		console.log('PDF文件导出成功:', fileName);
+	} catch (error) {
+		console.error('导出PDF文件失败:', error);
+		alert('导出PDF文件失败，请稍后重试');
+	}
 };
 </script>

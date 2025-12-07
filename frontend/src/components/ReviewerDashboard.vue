@@ -146,6 +146,7 @@
                           variant="outline" 
                           size="sm"
                           class="transition-all duration-200 hover:bg-blue-600 hover:text-white hover:border-blue-600"
+                          @click="setSelectedStudent(student)"
                         >
                           查看详情
                         </Button>
@@ -159,16 +160,6 @@
 
           <!-- Ranking Publication Content -->
           <div v-show="activeTab === 'ranking'" class="space-y-6">
-            <div class="flex justify-between items-center mb-6">
-              <h2 class="text-xl">排名公示</h2>
-              <Button 
-                class="transition-all duration-200 hover:bg-green-600 hover:text-white hover:border-green-600"
-                @click="exportRankings"
-              >
-                <Download class="h-4 w-4 mr-2" />
-                导出排名表格
-              </Button>
-            </div>
             <RankingList />
           </div>
         </div>
@@ -181,13 +172,139 @@
       @review-complete="handleReviewComplete"
       @close="selectedApplication = null"
     />
+
+    <!-- 学生详情对话框 -->
+    <Dialog :open="showStudentDetail" @update:open="showStudentDetail = $event">
+      <DialogContent class="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <div class="space-y-6">
+          <!-- 学生基本信息 -->
+          <div>
+            <h3 class="text-lg font-medium text-gray-900 mb-4">学生基本信息</h3>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
+              <div>
+                <p class="text-xs text-gray-500">学号</p>
+                <p class="text-sm font-medium">{{ selectedStudent?.studentId }}</p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-500">姓名</p>
+                <p class="text-sm font-medium">{{ selectedStudent?.name }}</p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-500">专业</p>
+                <p class="text-sm font-medium">{{ selectedStudent?.major || '未设置' }}</p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-500">年级</p>
+                <p class="text-sm font-medium">{{ selectedStudent?.grade || '未设置' }}</p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-500">班级</p>
+                <p class="text-sm font-medium">{{ selectedStudent?.className || '未设置' }}</p>
+              </div>
+              <div>
+                <p class="text-xs text-gray-500">GPA</p>
+                <p class="text-sm font-medium">{{ selectedStudent?.gpa || '未设置' }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 加分情况统计 -->
+          <div>
+            <h3 class="text-lg font-medium text-gray-900 mb-4">加分情况统计</h3>
+            <div class="grid grid-cols-3 gap-4">
+              <div class="bg-green-50 p-4 rounded-lg border border-green-200">
+                <p class="text-xs text-green-600 font-medium">已通过</p>
+                <p class="text-2xl font-bold text-green-700 mt-1">{{ studentApprovedPoints }} 分</p>
+                <p class="text-xs text-green-600 mt-1">{{ studentApprovedCount }} 项申请</p>
+              </div>
+              <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                <p class="text-xs text-yellow-600 font-medium">待审核</p>
+                <p class="text-2xl font-bold text-yellow-700 mt-1">{{ studentPendingPoints }} 分</p>
+                <p class="text-xs text-yellow-600 mt-1">{{ studentPendingCount }} 项申请</p>
+              </div>
+              <div class="bg-red-50 p-4 rounded-lg border border-red-200">
+                <p class="text-xs text-red-600 font-medium">已驳回</p>
+                <p class="text-2xl font-bold text-red-700 mt-1">{{ studentRejectedPoints }} 分</p>
+                <p class="text-xs text-red-600 mt-1">{{ studentRejectedCount }} 项申请</p>
+              </div>
+            </div>
+            <div class="mt-4 bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <div class="flex justify-between items-center">
+                <p class="text-sm font-medium text-blue-900">总分</p>
+                <p class="text-2xl font-bold text-blue-700">{{ studentTotalPoints }} 分</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 申请记录列表 -->
+          <div>
+            <h3 class="text-lg font-medium text-gray-900 mb-4">申请记录</h3>
+            <div v-if="studentApplications.length > 0" class="space-y-3">
+              <div
+                v-for="app in studentApplications"
+                :key="app.id"
+                class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+              >
+                <div class="flex justify-between items-start mb-3">
+                  <div class="flex-1">
+                    <div class="flex items-center space-x-3 mb-2">
+                      <h4 class="text-sm font-medium text-gray-900">{{ app.title }}</h4>
+                      <StatusBadge :status="app.status" />
+                    </div>
+                    <p class="text-xs text-gray-500 mb-1">类型：{{ app.type }}</p>
+                    <p class="text-xs text-gray-600">{{ app.description }}</p>
+                  </div>
+                  <div class="text-right ml-4">
+                    <p class="text-lg font-bold text-blue-600">{{ app.points }} 分</p>
+                    <p class="text-xs text-gray-500 mt-1">{{ formatDate(app.submittedAt) }}</p>
+                  </div>
+                </div>
+                
+                <!-- 审核信息 -->
+                <div v-if="app.reviewComment || app.reviewedAt" class="mt-3 pt-3 border-t border-gray-200">
+                  <div v-if="app.reviewedAt" class="text-xs text-gray-500 mb-1">
+                    审核时间：{{ formatDateTime(app.reviewedAt) }}
+                  </div>
+                  <div v-if="app.reviewComment" class="text-sm text-gray-700 bg-gray-50 p-2 rounded mt-1">
+                    <p class="text-xs text-gray-500 mb-1">审核意见：</p>
+                    <p class="whitespace-pre-wrap">{{ app.reviewComment }}</p>
+                  </div>
+                </div>
+
+                <!-- 文件列表 -->
+                <div v-if="app.files && app.files.length > 0" class="mt-3 pt-3 border-t border-gray-200">
+                  <p class="text-xs text-gray-500 mb-2">附件文件：</p>
+                  <div class="flex flex-wrap gap-2">
+                    <span
+                      v-for="(file, index) in app.files"
+                      :key="index"
+                      class="text-xs text-blue-600 hover:text-blue-800 underline cursor-pointer"
+                    >
+                      {{ getFileName(file) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div v-else class="text-center py-8 text-gray-500">
+              <p>该学生暂无申请记录</p>
+            </div>
+          </div>
+
+          <!-- 关闭按钮 -->
+          <div class="flex justify-end pt-4 border-t">
+            <Button variant="outline" @click="showStudentDetail = false">关闭</Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import type { User, Application, Student } from '../types';
-import { LogOut, Users, FileCheck, Trophy, Download } from 'lucide-vue-next';
+import { LogOut, Users, FileCheck, Trophy } from 'lucide-vue-next';
 import Card from './ui/Card.vue';
 import CardContent from './ui/CardContent.vue';
 import CardDescription from './ui/CardDescription.vue';
@@ -203,6 +320,8 @@ import TableRow from './ui/TableRow.vue';
 import ReviewPanel from './ReviewPanel.vue';
 import RankingList from './RankingList.vue';
 import StatusBadge from './StatusBadge.vue';
+import Dialog from './ui/SimpleDialog.vue';
+import DialogContent from './ui/SimpleDialogContent.vue';
 import { studentsApi, applicationsApi } from '../api';
 
 const { user } = defineProps<{
@@ -216,6 +335,8 @@ const emit = defineEmits<{
 const applications = ref<Application[]>([]);
 const students = ref<Student[]>([]);
 const selectedApplication = ref<Application | null>(null);
+const selectedStudent = ref<Student | null>(null);
+const showStudentDetail = ref(false);
 const activeTab = ref('review');
 
 // 定义导航标签页
@@ -261,28 +382,93 @@ const getStudentApprovedPoints = (studentId: string) => {
     .reduce((sum, app) => sum + app.points, 0);
 };
 
-const exportRankings = () => {
-  const rankings = students.value
-    .map((student) => {
-      const approvedApps = applications.value.filter(
-        (app) => app.studentId === student.studentId && app.status === 'approved'
-      );
-      const totalPoints = approvedApps.reduce((sum, app) => sum + app.points, 0);
-      return {
-        studentId: student.studentId,
-        name: student.name,
-        totalPoints,
-        applications: approvedApps.length,
-      };
-    })
-    .sort((a, b) => b.totalPoints - a.totalPoints);
-
-  console.log('导出排名表格:', rankings);
-  alert('排名表格已导出到控制台（在实际应用中将下载Excel文件）');
-};
 
 const setSelectedApplication = (app: Application) => {
   selectedApplication.value = app;
+};
+
+const setSelectedStudent = (student: Student) => {
+  selectedStudent.value = student;
+  showStudentDetail.value = true;
+};
+
+// 获取学生的申请记录
+const studentApplications = computed(() => {
+  if (!selectedStudent.value?.studentId) return [];
+  return getStudentApplications(selectedStudent.value.studentId);
+});
+
+// 学生加分统计
+const studentApprovedPoints = computed(() => {
+  if (!selectedStudent.value?.studentId) return 0;
+  return getStudentApprovedPoints(selectedStudent.value.studentId);
+});
+
+const studentApprovedCount = computed(() => {
+  return studentApplications.value.filter(app => app.status === 'approved').length;
+});
+
+const studentPendingPoints = computed(() => {
+  return studentApplications.value
+    .filter(app => app.status === 'pending')
+    .reduce((sum, app) => sum + app.points, 0);
+});
+
+const studentPendingCount = computed(() => {
+  return studentApplications.value.filter(app => app.status === 'pending').length;
+});
+
+const studentRejectedPoints = computed(() => {
+  return studentApplications.value
+    .filter(app => app.status === 'rejected')
+    .reduce((sum, app) => sum + app.points, 0);
+});
+
+const studentRejectedCount = computed(() => {
+  return studentApplications.value.filter(app => app.status === 'rejected').length;
+});
+
+const studentTotalPoints = computed(() => {
+  return studentApprovedPoints.value + studentPendingPoints.value;
+});
+
+// 格式化日期
+const formatDate = (dateString: string): string => {
+  if (!dateString) return '';
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+  } catch {
+    return dateString;
+  }
+};
+
+// 格式化日期时间
+const formatDateTime = (dateTime: string | undefined): string => {
+  if (!dateTime) return '';
+  try {
+    const date = new Date(dateTime);
+    return date.toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } catch {
+    return dateTime;
+  }
+};
+
+// 获取文件名（从路径中提取）
+const getFileName = (filePath: string): string => {
+  if (!filePath) return '';
+  const parts = filePath.split('/');
+  return parts[parts.length - 1] || filePath;
 };
 
 const handleLogout = () => {

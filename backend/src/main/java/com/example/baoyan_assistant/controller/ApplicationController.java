@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -103,12 +104,39 @@ public class ApplicationController {
      * @return 创建的申请对象
      */
     @PostMapping("/applications")
-    public ResponseEntity<ApplicationDTO> createApplication(@RequestBody ApplicationCreateDTO createDTO) {
+    public ResponseEntity<?> createApplication(@RequestBody ApplicationCreateDTO createDTO) {
         try {
+            System.out.println("收到创建申请请求");
+            System.out.println("请求体: " + (createDTO != null ? 
+                "studentId=" + createDTO.getStudentId() + 
+                ", type=" + createDTO.getType() + 
+                ", title=" + createDTO.getTitle() : "null"));
+            
+            // 验证请求体
+            if (createDTO == null) {
+                System.out.println("错误: 请求体为空");
+                return ResponseEntity.badRequest().body(Map.of("error", "请求体不能为空"));
+            }
+            
             Application application = applicationService.create(createDTO);
+            System.out.println("创建成功 - 申请ID: " + application.getId());
             return new ResponseEntity<>(ApplicationDTO.fromEntity(application), HttpStatus.CREATED);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(null);
+            System.out.println("运行时异常: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest()
+                    .body(Map.of("error", e.getMessage() != null ? e.getMessage() : "创建申请失败"));
+        } catch (Exception e) {
+            System.out.println("异常: " + e.getMessage());
+            e.printStackTrace();
+            // 检查是否是数据库只读错误
+            String errorMsg = e.getMessage() != null ? e.getMessage() : "未知错误";
+            if (errorMsg.contains("readonly") || errorMsg.contains("read-only")) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(Map.of("error", "数据库只读错误，请检查数据库文件权限"));
+            }
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "创建申请失败: " + errorMsg));
         }
     }
     
@@ -120,14 +148,50 @@ public class ApplicationController {
      * @return 更新后的申请对象
      */
     @PutMapping("/applications/{id}")
-    public ResponseEntity<ApplicationDTO> updateApplication(
+    public ResponseEntity<?> updateApplication(
             @PathVariable Long id, 
             @RequestBody ApplicationUpdateDTO updateDTO) {
         try {
+            System.out.println("收到更新申请请求 - ID: " + id);
+            System.out.println("请求体: " + (updateDTO != null ? updateDTO.getStatus() + ", " + updateDTO.getReviewComment() : "null"));
+            
+            // 验证请求体
+            if (updateDTO == null) {
+                System.out.println("错误: 请求体为空");
+                return ResponseEntity.badRequest().body(Map.of("error", "请求体不能为空"));
+            }
+            
+            // 验证状态
+            if (updateDTO.getStatus() == null || updateDTO.getStatus().trim().isEmpty()) {
+                System.out.println("错误: 申请状态为空");
+                return ResponseEntity.badRequest().body(Map.of("error", "申请状态不能为空"));
+            }
+            
             Application application = applicationService.update(id, updateDTO);
+            System.out.println("更新成功 - 申请ID: " + id + ", 状态: " + application.getStatus());
             return ResponseEntity.ok(ApplicationDTO.fromEntity(application));
         } catch (RuntimeException e) {
-            return ResponseEntity.notFound().build();
+            System.out.println("运行时异常: " + e.getMessage());
+            e.printStackTrace();
+            // 如果是"申请不存在"的错误，返回404
+            if (e.getMessage() != null && e.getMessage().contains("申请不存在")) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", e.getMessage()));
+            }
+            // 其他运行时异常返回500
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage() != null ? e.getMessage() : "更新申请失败"));
+        } catch (Exception e) {
+            System.out.println("异常: " + e.getMessage());
+            e.printStackTrace();
+            // 检查是否是数据库只读错误
+            String errorMsg = e.getMessage() != null ? e.getMessage() : "未知错误";
+            if (errorMsg.contains("readonly") || errorMsg.contains("read-only")) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(Map.of("error", "数据库只读错误，请检查数据库文件权限"));
+            }
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "更新申请失败: " + errorMsg));
         }
     }
     

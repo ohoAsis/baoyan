@@ -1,10 +1,6 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500/10 to-indigo-600/10 p-4 relative overflow-hidden">
-    <!-- 装饰性背景元素 -->
-    <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-400/10 rounded-full blur-3xl"></div>
-    <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-500/10 rounded-full blur-3xl"></div>
-    
-    <Card class="w-full max-w-md bg-white/95 backdrop-blur-sm border-none shadow-xl transition-all duration-300 hover:shadow-2xl">
+  <div class="min-h-screen flex items-center justify-center p-4 relative overflow-hidden" :style="backgroundStyle">
+    <Card class="w-full max-w-md bg-white/60 backdrop-blur-md border-none shadow-xl transition-all duration-300 hover:shadow-2xl relative z-10">
       <CardHeader class="text-center space-y-2">
         <!-- 登录图标 -->
         <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg text-white mb-2">
@@ -111,6 +107,7 @@ import Button from './ui/Button.vue';
 import Input from './ui/Input.vue';
 import Label from './ui/Label.vue';
 import Select from './ui/Select.vue';
+import loginBg from '../assets/login-bg.jpg';
 
 const emit = defineEmits<{
   login: [user: User];
@@ -121,6 +118,15 @@ const password = ref('');
 const role = ref<UserRole>('student');
 const isLoggingIn = ref(false);
 const buttonKey = ref(0); // 用于强制重新渲染按钮以触发动画
+
+// 背景图片样式
+const backgroundStyle = computed(() => ({
+  backgroundImage: `url(${loginBg})`,
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  backgroundRepeat: 'no-repeat',
+  backgroundAttachment: 'fixed'
+}));
 
 // 计算按钮是否应该禁用
 const isButtonDisabled = computed(() => {
