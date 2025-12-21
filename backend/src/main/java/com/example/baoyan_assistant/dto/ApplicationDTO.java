@@ -5,8 +5,8 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 申请信息DTO
@@ -61,7 +61,10 @@ public class ApplicationDTO {
         
         // 处理文件列表
         if (application.getFiles() != null && !application.getFiles().isEmpty()) {
-            dto.setFiles(Arrays.asList(application.getFiles().split(",")));
+            List<String> fileUrls = application.getFiles().stream()
+                    .map(fileRecord -> fileRecord.getFileUrl())
+                    .collect(Collectors.toList());
+            dto.setFiles(fileUrls);
         } else {
             dto.setFiles(new ArrayList<>());
         }
@@ -90,12 +93,9 @@ public class ApplicationDTO {
         application.setReviewedAt(dto.getReviewedAt());
         application.setReviewComment(dto.getReviewComment());
         
-        // 处理文件列表转换为字符串
-        if (dto.getFiles() != null && !dto.getFiles().isEmpty()) {
-            application.setFiles(String.join(",", dto.getFiles()));
-        } else {
-            application.setFiles("");
-        }
+        // 处理文件列表：在toEntity方法中不直接设置文件记录，
+        // 因为FileRecord需要与ApplicationId关联，而此时Application可能还没有ID
+        application.setFiles(new ArrayList<>());
         
         return application;
     }

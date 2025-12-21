@@ -1,5 +1,9 @@
 package com.example.baoyan_assistant.controller;
 
+import com.example.baoyan_assistant.service.FileValidationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,16 +27,13 @@ import java.util.*;
 @CrossOrigin(origins = "*")
 public class FileUploadController {
     
+    private static final Logger logger = LoggerFactory.getLogger(FileUploadController.class);
+    
+    @Autowired
+    private FileValidationService fileValidationService;
+    
     @Value("${file.upload.dir:uploads}")
     private String uploadDir;
-    
-    // 允许的文件类型
-    private static final Set<String> ALLOWED_EXTENSIONS = Set.of(
-        "pdf", "jpg", "jpeg", "png", "gif", "doc", "docx"
-    );
-    
-    // 最大文件大小（10MB）
-    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024;
     
     /**
      * 上传单个文件
@@ -41,37 +42,12 @@ public class FileUploadController {
      * @return 文件路径
      */
     @PostMapping
-    public ResponseEntity<Map<String, Object>> uploadFile(@RequestParam("file") MultipartFile file) {
-        Map<String, Object> response = new HashMap<>();
-        
+    public ResponseEntity<?> uploadFile(@RequestParam("file") MultipartFile file) {
         try {
-            // 验证文件
-            if (file.isEmpty()) {
-                response.put("success", false);
-                response.put("message", "文件不能为空");
-                return ResponseEntity.badRequest().body(response);
-            }
-            
-            // 验证文件大小
-            if (file.getSize() > MAX_FILE_SIZE) {
-                response.put("success", false);
-                response.put("message", "文件大小不能超过10MB");
-                return ResponseEntity.badRequest().body(response);
-            }
-            
-            // 验证文件类型
-            String originalFilename = file.getOriginalFilename();
-            if (originalFilename == null) {
-                response.put("success", false);
-                response.put("message", "文件名不能为空");
-                return ResponseEntity.badRequest().body(response);
-            }
-            
-            String extension = getFileExtension(originalFilename).toLowerCase();
-            if (!ALLOWED_EXTENSIONS.contains(extension)) {
-                response.put("success", false);
-                response.put("message", "不支持的文件类型，仅支持：PDF、JPG、PNG、DOC、DOCX");
-                return ResponseEntity.badRequest().body(response);
+            // 统一验证所有规则
+            String validationError = fileValidationService.validateAll(file);
+            if (validationError != null) {
+                return ResponseEntity.badRequest().body(Map.of("error", validationError));
             }
             
             // 创建上传目录
@@ -80,29 +56,43 @@ public class FileUploadController {
                 Files.createDirectories(uploadPath);
             }
             
-            // 生成唯一文件名
-            String uniqueFilename = generateUniqueFilename(originalFilename);
-            Path filePath = uploadPath.resolve(uniqueFilename);
+            // 生成唯一文件名（UUID + 扩展名）
+            String storedFileName = fileValidationService.generateUniqueStoredFileName(file.getOriginalFilename());
+            Path filePath = uploadPath.resolve(storedFileName);
             
             // 保存文件
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
             
             // 返回文件路径（相对于上传目录）
-            String fileUrl = "/" + uploadDir + "/" + uniqueFilename;
+            String fileUrl = "/" + uploadDir + "/" + storedFileName;
+            // 服务器真实路径
+            String realPath = filePath.toAbsolutePath().toString();
+            // 获取文件MIME类型
+            String fileType = file.getContentType() != null ? file.getContentType() : "application/octet-stream";
             
-            response.put("success", true);
-            response.put("message", "文件上传成功");
+            Map<String, Object> response = new HashMap<>();
             response.put("fileUrl", fileUrl);
-            response.put("fileName", uniqueFilename);
-            response.put("originalFileName", originalFilename);
+            response.put("storedFileName", storedFileName);
+            response.put("realPath", realPath);
+            response.put("originalFileName", file.getOriginalFilename());
             response.put("fileSize", file.getSize());
+            response.put("fileType", fileType);
+            
+            logger.info("文件上传成功: {}, 存储为: {}, 大小: {} bytes, MIME类型: {}",
+                    file.getOriginalFilename(), storedFileName, file.getSize(), fileType);
             
             return ResponseEntity.ok(response);
             
         } catch (IOException e) {
-            response.put("success", false);
-            response.put("message", "文件上传失败：" + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+            String errorMessage = "文件上传失败：" + e.getMessage();
+            logger.error(errorMessage, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", errorMessage));
+        } catch (Exception e) {
+            String errorMessage = "文件上传失败：" + e.getMessage();
+            logger.error(errorMessage, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", errorMessage));
         }
     }
     
@@ -113,70 +103,64 @@ public class FileUploadController {
      * @return 文件路径列表
      */
     @PostMapping("/multiple")
-    public ResponseEntity<Map<String, Object>> uploadMultipleFiles(@RequestParam("files") MultipartFile[] files) {
-        Map<String, Object> response = new HashMap<>();
-        List<Map<String, Object>> uploadedFiles = new ArrayList<>();
-        List<String> errors = new ArrayList<>();
-        
+    public ResponseEntity<?> uploadMultipleFiles(@RequestParam("files") MultipartFile[] files) {
         try {
+            List<Map<String, Object>> uploadedFiles = new ArrayList<>();
+            List<String> errors = new ArrayList<>();
+            
+            // 创建上传目录
+            Path uploadPath = Paths.get(uploadDir);
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+            
             for (MultipartFile file : files) {
-                Map<String, Object> fileResponse = new HashMap<>();
-                
                 try {
-                    // 验证文件
-                    if (file.isEmpty()) {
-                        errors.add(file.getOriginalFilename() + ": 文件不能为空");
+                    // 统一验证所有规则
+                    String validationError = fileValidationService.validateAll(file);
+                    if (validationError != null) {
+                        errors.add((file.getOriginalFilename() != null ? file.getOriginalFilename() : "未知文件") + ": " + validationError);
                         continue;
                     }
                     
-                    // 验证文件大小
-                    if (file.getSize() > MAX_FILE_SIZE) {
-                        errors.add(file.getOriginalFilename() + ": 文件大小不能超过10MB");
-                        continue;
-                    }
-                    
-                    // 验证文件类型
-                    String originalFilename = file.getOriginalFilename();
-                    if (originalFilename == null) {
-                        errors.add("文件名不能为空");
-                        continue;
-                    }
-                    
-                    String extension = getFileExtension(originalFilename).toLowerCase();
-                    if (!ALLOWED_EXTENSIONS.contains(extension)) {
-                        errors.add(originalFilename + ": 不支持的文件类型");
-                        continue;
-                    }
-                    
-                    // 创建上传目录
-                    Path uploadPath = Paths.get(uploadDir);
-                    if (!Files.exists(uploadPath)) {
-                        Files.createDirectories(uploadPath);
-                    }
-                    
-                    // 生成唯一文件名
-                    String uniqueFilename = generateUniqueFilename(originalFilename);
-                    Path filePath = uploadPath.resolve(uniqueFilename);
+                    // 生成唯一文件名（UUID + 扩展名）
+                    String storedFileName = fileValidationService.generateUniqueStoredFileName(file.getOriginalFilename());
+                    Path filePath = uploadPath.resolve(storedFileName);
                     
                     // 保存文件
                     Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
                     
                     // 返回文件路径
-                    String fileUrl = "/" + uploadDir + "/" + uniqueFilename;
+                    String fileUrl = "/" + uploadDir + "/" + storedFileName;
+                    // 服务器真实路径
+                    String realPath = filePath.toAbsolutePath().toString();
+                    // 获取文件MIME类型
+                    String fileType = file.getContentType() != null ? file.getContentType() : "application/octet-stream";
                     
                     Map<String, Object> fileInfo = new HashMap<>();
                     fileInfo.put("fileUrl", fileUrl);
-                    fileInfo.put("fileName", uniqueFilename);
-                    fileInfo.put("originalFileName", originalFilename);
+                    fileInfo.put("storedFileName", storedFileName);
+                    fileInfo.put("realPath", realPath);
+                    fileInfo.put("originalFileName", file.getOriginalFilename());
                     fileInfo.put("fileSize", file.getSize());
+                    fileInfo.put("fileType", fileType);
                     uploadedFiles.add(fileInfo);
                     
+                    logger.info("文件上传成功: {}, 存储为: {}, 大小: {} bytes, MIME类型: {}",
+                            file.getOriginalFilename(), storedFileName, file.getSize(), fileType);
+                    
                 } catch (IOException e) {
-                    errors.add(file.getOriginalFilename() + ": " + e.getMessage());
+                    String errorMsg = (file.getOriginalFilename() != null ? file.getOriginalFilename() : "未知文件") + ": " + e.getMessage();
+                    errors.add(errorMsg);
+                    logger.error(errorMsg, e);
+                } catch (Exception e) {
+                    String errorMsg = (file.getOriginalFilename() != null ? file.getOriginalFilename() : "未知文件") + ": " + e.getMessage();
+                    errors.add(errorMsg);
+                    logger.error(errorMsg, e);
                 }
             }
             
-            response.put("success", uploadedFiles.size() > 0);
+            Map<String, Object> response = new HashMap<>();
             response.put("files", uploadedFiles);
             if (!errors.isEmpty()) {
                 response.put("errors", errors);
@@ -185,32 +169,12 @@ public class FileUploadController {
             return ResponseEntity.ok(response);
             
         } catch (Exception e) {
-            response.put("success", false);
-            response.put("message", "批量上传失败：" + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+            String errorMessage = "批量上传失败：" + e.getMessage();
+            logger.error(errorMessage, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", errorMessage));
         }
     }
     
-    /**
-     * 获取文件扩展名
-     */
-    private String getFileExtension(String filename) {
-        int lastDotIndex = filename.lastIndexOf('.');
-        if (lastDotIndex == -1 || lastDotIndex == filename.length() - 1) {
-            return "";
-        }
-        return filename.substring(lastDotIndex + 1);
-    }
-    
-    /**
-     * 生成唯一文件名
-     */
-    private String generateUniqueFilename(String originalFilename) {
-        String extension = getFileExtension(originalFilename);
-        String nameWithoutExtension = originalFilename.substring(0, originalFilename.lastIndexOf('.'));
-        String timestamp = String.valueOf(System.currentTimeMillis());
-        String random = UUID.randomUUID().toString().substring(0, 8);
-        return nameWithoutExtension + "_" + timestamp + "_" + random + "." + extension;
-    }
 }
 

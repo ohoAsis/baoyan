@@ -3,14 +3,17 @@ package com.example.baoyan_assistant.service;
 import com.example.baoyan_assistant.dto.ApplicationCreateDTO;
 import com.example.baoyan_assistant.dto.ApplicationUpdateDTO;
 import com.example.baoyan_assistant.entity.Application;
+import com.example.baoyan_assistant.entity.FileRecord;
 import com.example.baoyan_assistant.entity.Student;
 import com.example.baoyan_assistant.repository.ApplicationRepository;
 import com.example.baoyan_assistant.repository.StudentRepository;
+import com.example.baoyan_assistant.service.FileRecordService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,6 +30,9 @@ public class ApplicationService {
     
     @Autowired
     private StudentRepository studentRepository;
+    
+    @Autowired
+    private FileRecordService fileRecordService;
     
     /**
      * 获取所有申请
@@ -117,15 +123,44 @@ public class ApplicationService {
         application.setStatus("pending");
         application.setSubmittedAt(LocalDateTime.now());
         
+        // 保存申请以获取applicationId
+        Application savedApplication = applicationRepository.save(application);
+        
         // 设置文件列表（如果有）
         if (dto.getFiles() != null && !dto.getFiles().isEmpty()) {
-            application.setFiles(String.join(",", dto.getFiles()));
-        } else {
-            application.setFiles("");
+            List<FileRecord> fileRecords = new ArrayList<>();
+            for (String fileUrl : dto.getFiles()) {
+                // 解析fileUrl获取storedFileName
+                // 假设fileUrl格式为 /uploads/原始文件名_时间戳_随机字符串.扩展名
+                String storedFileName = fileUrl.substring(fileUrl.lastIndexOf('/') + 1);
+                
+                FileRecord fileRecord = new FileRecord();
+                fileRecord.setFileUrl(fileUrl);
+                // 真实路径需要根据实际部署情况调整，这里使用相对路径
+                fileRecord.setRealPath("uploads/" + storedFileName);
+                // 原始文件名需要从storedFileName中提取，这里简化处理
+                String originalFileName = storedFileName.split("_")[0];
+                fileRecord.setOriginalFileName(originalFileName);
+                fileRecord.setStoredFileName(storedFileName);
+                // 文件大小和类型需要从前端获取，这里暂时设为默认值
+                fileRecord.setFileSize(0L);
+                fileRecord.setFileType("application/octet-stream");
+                fileRecord.setUploadTime(LocalDateTime.now());
+                // 使用student的主键id作为uploaderId
+                fileRecord.setUploaderId(student.getId());
+                fileRecord.setApplicationId(savedApplication.getId());
+                fileRecord.setDeleted(false);
+                
+                fileRecords.add(fileRecord);
+            }
+            
+            // 保存文件记录
+            List<FileRecord> savedFileRecords = fileRecordService.saveAll(fileRecords);
+            savedApplication.setFiles(savedFileRecords);
         }
         
         // 保存并返回完整的 Application 对象
-        return applicationRepository.save(application);
+        return savedApplication;
     }
     
     /**

@@ -1,9 +1,8 @@
 package com.example.baoyan_assistant.entity;
 
 import jakarta.persistence.*;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -77,10 +76,10 @@ public class Application {
     private String reviewComment;
 
     /**
-     * 附件文件列表（以JSON格式存储）
+     * 关联的文件记录列表
      */
-    @Column(columnDefinition = "TEXT")
-    private String files;
+    @OneToMany(mappedBy = "application", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<FileRecord> files = new ArrayList<>();
 
     /**
      * 创建时间
@@ -217,11 +216,11 @@ public class Application {
         this.reviewComment = reviewComment;
     }
 
-    public String getFiles() {
+    public List<FileRecord> getFiles() {
         return files;
     }
 
-    public void setFiles(String files) {
+    public void setFiles(List<FileRecord> files) {
         this.files = files;
     }
 

@@ -1,8 +1,11 @@
 package com.example.baoyan_assistant.config;
 
+import com.example.baoyan_assistant.interceptor.UserAuthInterceptor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -14,37 +17,30 @@ import java.nio.file.Paths;
  */
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
-
+    
+    @Autowired
+    private UserAuthInterceptor userAuthInterceptor;
+    
     @Value("${file.upload.dir:uploads}")
     private String uploadDir;
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // 配置上传文件的静态资源访问路径
-        // 将 /uploads/** 映射到文件系统的 uploads 目录
-        String uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize().toString();
-        
-        // Windows路径需要转换为正斜杠，并确保以 / 结尾
-        uploadPath = uploadPath.replace("\\", "/");
-        if (!uploadPath.endsWith("/")) {
-            uploadPath += "/";
-        }
-        
-        // 使用 file: 协议访问本地文件系统
-        // Windows路径需要三个斜杠：file:///C:/path/to/uploads/
-        String fileUrl = uploadPath.startsWith("/") ? "file:" + uploadPath : "file:/" + uploadPath;
-        
-        registry.addResourceHandler("/uploads/**")
-                .addResourceLocations(fileUrl)
-                .setCachePeriod(3600); // 缓存1小时
-        
-        // 添加日志输出以便调试
-        System.out.println("静态资源配置: /uploads/** -> " + fileUrl);
+        // 移除静态资源暴露，禁止直接访问/uploads/**目录
+        // 文件必须通过受控的下载接口访问
+    }
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        // 注册用户身份认证拦截器
+        registry.addInterceptor(userAuthInterceptor)
+                .addPathPatterns("/api/**")
+                .excludePathPatterns("/api/auth/login");
     }
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        // 允许跨域访问（如果需要）
+        // 允许跨域访问
         registry.addMapping("/**")
                 .allowedOrigins("*")
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
