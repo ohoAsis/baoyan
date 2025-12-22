@@ -17,7 +17,7 @@ import java.util.Set;
  * 数据库文件权限修复器
  * 在应用启动时自动修复SQLite数据库文件的只读属性
  */
-@Component
+//@Component
 public class DatabaseFilePermissionFixer implements ApplicationListener<ApplicationReadyEvent> {
 
     @Value("${spring.datasource.url}")
