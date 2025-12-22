@@ -7,103 +7,41 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
-  user: User;
+  userId: number;
+  role: string;
+  realName: string;
   token: string;
 }
 
 export const authApi = {
   // 登录
   login: async (credentials: LoginRequest): Promise<LoginResponse> => {
-    // 在实际应用中，这里会调用真实的API
+    // 调用真实登录API
     const response = await apiClient.post<LoginResponse>('/auth/login', credentials);
-    return response.data;
     
-    // 模拟登录API（保留作为备用）
-    /* 
-    return new Promise<LoginResponse>((resolve, reject) => {
-      setTimeout(() => {
-        // 模拟用户验证
-        const { username, password } = credentials;
-        
-        // 演示账号
-        if (username === 'reviewer' && password === '123456') {
-          resolve({
-            user: {
-              id: '1',
-              username: 'reviewer',
-              name: '审核老师',
-              role: 'reviewer',
-              email: 'reviewer@example.com'
-            },
-            token: 'mock-reviewer-token'
-          });
-        } else if (username === 'student' && password === 'student123') {
-          resolve({
-            user: {
-              id: '2',
-              username: 'student',
-              name: '学生',
-              role: 'student',
-              email: 'student@example.com'
-            },
-            token: 'mock-student-token'
-          });
-        } else if (username === 'student/2021001001' && password === 'student123') {
-          resolve({
-            user: {
-              id: '2',
-              username: 'student/2021001001',
-              name: '张三',
-              role: 'student',
-              email: 'student@example.com'
-            },
-            token: 'mock-student-token'
-          });
-        } else {
-          reject(new Error('用户名或密码错误'));
-        }
-      }, 500);
-    });
-    */
+    // 健壮性检查
+    if (!response.data) {
+      throw new Error('登录返回异常，无数据');
+    }
+    
+    // 检查必要字段是否存在
+    if (!response.data.token || !response.data.role || !response.data.userId) {
+      throw new Error('登录返回异常，缺少必要字段');
+    }
+    
+    return response.data;
   },
   
   // 登出
   logout: async (): Promise<void> => {
-    // 在实际应用中，这里会调用真实的API
+    // 调用真实登出API
     await apiClient.post('/auth/logout');
-    
-    // 模拟登出API（保留作为备用）
-    /* 
-    return new Promise<void>((resolve) => {
-      setTimeout(() => {
-        resolve();
-      }, 200);
-    });
-    */
   },
   
   // 获取当前用户信息
   getCurrentUser: async (): Promise<User> => {
-    // 在实际应用中，这里会调用真实的API
+    // 调用真实获取当前用户API
     const response = await apiClient.get<User>('/auth/me');
     return response.data;
-    
-    // 模拟获取当前用户API（保留作为备用）
-    /* 
-    return new Promise<User>((resolve, reject) => {
-      setTimeout(() => {
-        const savedUser = localStorage.getItem('currentUser');
-        if (savedUser) {
-          try {
-            resolve(JSON.parse(savedUser));
-          } catch (e) {
-            reject(new Error('无法解析用户信息'));
-          }
-        } else {
-          reject(new Error('未找到用户信息'));
-        }
-      }, 200);
-    });
-    */
   }
 };

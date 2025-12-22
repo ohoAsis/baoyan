@@ -18,12 +18,13 @@
           <Select v-model="role" placeholder="请选择用户类型" class="border-gray-300 focus:border-blue-500 focus:ring-blue-500/20">
             <option value="student">学生</option>
             <option value="reviewer">审核老师</option>
+            <option value="admin">管理员</option>
           </Select>
         </div>
 
         <!-- 用户名输入 -->
         <div class="space-y-2">
-          <Label for="username" class="text-gray-700 font-medium">{{ role === 'student' ? '学号' : '工号' }}</Label>
+          <Label for="username" class="text-gray-700 font-medium">{{ role === 'student' ? '学号' : role === 'admin' ? '用户名' : '工号' }}</Label>
           <div class="relative">
             <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -32,7 +33,7 @@
             </span>
             <Input
               id="username"
-              :placeholder="role === 'student' ? '请输入学号' : '请输入工号'"
+              :placeholder="role === 'student' ? '请输入学号' : role === 'admin' ? '请输入用户名' : '请输入工号'"
               v-model="username"
               class="pl-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500/20 transition-all"
               :class="{ 'ring-2 ring-blue-100': username.length > 0 }"
@@ -83,6 +84,11 @@
             {{ isLoggingIn ? '登录中...' : '登录' }}
           </span>
         </Button>
+        
+        <!-- 错误信息显示 -->
+        <div v-if="errorMessage" class="text-sm text-red-500 text-center bg-red-50 rounded-lg p-3 border border-red-100">
+          {{ errorMessage }}
+        </div>
 
         <!-- 演示账号信息 -->
         <div class="text-sm text-gray-500 text-center space-y-1 bg-gray-50 rounded-lg p-3 border border-gray-100">
@@ -108,9 +114,10 @@ import Input from './ui/Input.vue';
 import Label from './ui/Label.vue';
 import Select from './ui/Select.vue';
 import loginBg from '../assets/login-bg.jpg';
+import { authApi } from '../api/auth';
 
 const emit = defineEmits<{
-  login: [user: User];
+  login: [user: User, token: string];
 }>();
 
 const username = ref('');
@@ -118,6 +125,7 @@ const password = ref('');
 const role = ref<UserRole>('student');
 const isLoggingIn = ref(false);
 const buttonKey = ref(0); // 用于强制重新渲染按钮以触发动画
+const errorMessage = ref('');
 
 // 背景图片样式
 const backgroundStyle = computed(() => ({
@@ -143,27 +151,41 @@ watch([username, password], () => {
     // 增加按钮key来触发过渡动画
     buttonKey.value++;
   }
+  
+  // 清除错误信息
+  if (errorMessage.value) {
+    errorMessage.value = '';
+  }
 });
 
 const handleLogin = async () => {
   if (!username.value || !password.value) return;
   
-  // 显示登录中状态
+  // 显示登录中状态，清除错误信息
   isLoggingIn.value = true;
+  errorMessage.value = '';
   
   try {
-    // 模拟登录过程的延迟
-    await new Promise(resolve => setTimeout(resolve, 800));
+    // 调用真实登录API
+    const response = await authApi.login({ username: username.value, password: password.value });
     
-    const mockUser: User = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: username.value,
-      studentId: role.value === 'student' ? '2021001001' : undefined,
-      major: role.value === 'student' ? '软件工程' : undefined,
-      role: role.value,
+    // 构造符合前端User接口的对象
+    const user: User = {
+      id: response.userId.toString(),
+      name: response.realName,
+      username: username.value,
+      role: response.role as UserRole,
+      // 根据角色设置可选字段
+      studentId: response.role === 'student' ? username.value : undefined,
+      major: undefined,
+      email: undefined
     };
-
-    emit('login', mockUser);
+    
+    // 登录成功，传递用户信息和token
+    emit('login', user, response.token);
+  } catch (error) {
+    // 登录失败，显示错误信息
+    errorMessage.value = error instanceof Error ? error.message : '登录失败，请检查用户名和密码';
   } finally {
     // 确保无论成功失败都重置登录状态
     isLoggingIn.value = false;
