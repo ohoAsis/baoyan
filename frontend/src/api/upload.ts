@@ -1,12 +1,13 @@
 import apiClient from './client';
 
 export interface UploadFileResponse {
-  success: boolean;
-  message?: string;
-  fileUrl?: string;
-  fileName?: string;
+  fileUrl: string;
+  storedFileName?: string;
   originalFileName?: string;
   fileSize?: number;
+  fileType?: string;
+  error?: string;
+  message?: string;
 }
 
 export interface UploadMultipleFilesResponse {

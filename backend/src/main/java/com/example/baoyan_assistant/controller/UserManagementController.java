@@ -173,6 +173,51 @@ public class UserManagementController {
                     .body(new ErrorResponse("ERROR", e.getMessage()));
         }
     }
+    
+    /**
+     * 创建用户（通用）
+     * @param request 创建用户请求体
+     * @return 创建的用户信息（不含密码）
+     */
+    @PostMapping
+    public ResponseEntity<?> createUser(@RequestBody CreateUserRequest request) {
+        try {
+            checkAdminRole();
+            
+            User user;
+            if ("student".equals(request.getRole())) {
+                // 创建学生用户
+                user = adminUserManagementService.createStudentUser(
+                        request.getUsername(),
+                        ""
+                );
+            } else if ("reviewer".equals(request.getRole())) {
+                // 创建审核老师用户
+                user = adminUserManagementService.createReviewerUser(
+                        request.getUsername(),
+                        ""
+                );
+            } else if ("admin".equals(request.getRole())) {
+                // 创建管理员用户
+                user = adminUserManagementService.createAdminUser(
+                        request.getUsername(),
+                        ""
+                );
+            } else {
+                return ResponseEntity.badRequest()
+                        .body(new ErrorResponse("ERROR", "无效的角色类型"));
+            }
+            
+            // 返回用户信息（不含密码）
+            return ResponseEntity.ok(createUserResponse(user));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(new ErrorResponse("ERROR", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new ErrorResponse("ERROR", e.getMessage()));
+        }
+    }
 
     /**
      * 重置用户密码
@@ -208,10 +253,12 @@ public class UserManagementController {
         try {
             checkAdminRole();
             
-            adminUserManagementService.updateStatus(userId, request.getStatus());
+            // 将Boolean类型转换为String类型（active/disabled）
+            String statusStr = request.getStatus() ? "active" : "disabled";
+            adminUserManagementService.updateStatus(userId, statusStr);
             
             // 返回更新后的状态信息
-            return ResponseEntity.ok(new UpdateStatusResponse(userId, request.getStatus()));
+            return ResponseEntity.ok(new UpdateStatusResponse(userId, statusStr));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
                     .body(new ErrorResponse("ERROR", e.getMessage()));
@@ -279,6 +326,19 @@ public class UserManagementController {
         public String getRealName() { return realName; }
         public void setRealName(String realName) { this.realName = realName; }
     }
+    
+    /**
+     * 创建用户通用请求体
+     */
+    static class CreateUserRequest {
+        private String username;
+        private String role;
+        
+        public String getUsername() { return username; }
+        public void setUsername(String username) { this.username = username; }
+        public String getRole() { return role; }
+        public void setRole(String role) { this.role = role; }
+    }
 
     /**
      * 用户响应对象（不含密码）
@@ -325,10 +385,10 @@ public class UserManagementController {
      * 更新状态请求体
      */
     static class UpdateStatusRequest {
-        private String status;
+        private Boolean status;
         
-        public String getStatus() { return status; }
-        public void setStatus(String status) { this.status = status; }
+        public Boolean getStatus() { return status; }
+        public void setStatus(Boolean status) { this.status = status; }
     }
 
     /**

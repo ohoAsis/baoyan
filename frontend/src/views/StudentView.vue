@@ -1,5 +1,5 @@
 <template>
-  <StudentDashboard :user="currentUser" @logout="handleLogout" />
+  <StudentDashboard @logout="handleLogout" />
 </template>
 
 <script setup lang="ts">
@@ -8,7 +8,7 @@ import { useAuth } from '../stores/auth';
 import StudentDashboard from '../components/StudentDashboard.vue';
 
 const router = useRouter();
-const { currentUser, logout } = useAuth();
+const { logout } = useAuth();
 
 const handleLogout = () => {
   logout();

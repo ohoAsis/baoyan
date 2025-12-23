@@ -21,11 +21,12 @@ public class Application {
     private Long id;
 
     /**
-     * 关联学生（多对一关系）
+     * 学生ID（使用用户的username作为学号）
      */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "student_id", nullable = false)
-    private Student student;
+    @Column(name = "student_id", nullable = false, length = 50)
+    // 当前阶段：studentId 存储学号（username）
+    // 未来引入 Student 实体后可演进
+    private String studentId;
 
     /**
      * 申请类型
@@ -102,8 +103,8 @@ public class Application {
     /**
      * 带参构造函数
      */
-    public Application(Student student, String type, String title, String description, Double points) {
-        this.student = student;
+    public Application(String studentId, String type, String title, String description, Double points) {
+        this.studentId = studentId;
         this.type = type;
         this.title = title;
         this.description = description;
@@ -144,12 +145,12 @@ public class Application {
         this.id = id;
     }
 
-    public Student getStudent() {
-        return student;
+    public String getStudentId() {
+        return studentId;
     }
 
-    public void setStudent(Student student) {
-        this.student = student;
+    public void setStudentId(String studentId) {
+        this.studentId = studentId;
     }
 
     public String getType() {

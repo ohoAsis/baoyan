@@ -1,27 +1,27 @@
 <template>
   <div class="space-y-6">
     <!-- 学生信息卡片 -->
-    <Card class="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-      <CardHeader>
-        <CardTitle>学生信息</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <p class="text-sm text-gray-600">姓名</p>
-            <p class="text-lg">{{ studentName }}</p>
-          </div>
-          <div>
-            <p class="text-sm text-gray-600">学号</p>
-            <p class="text-lg">{{ studentId }}</p>
-          </div>
-          <div>
-            <p class="text-sm text-gray-600">专业</p>
-            <p class="text-lg">{{ major }}</p>
-          </div>
+  <Card class="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+    <CardHeader>
+      <CardTitle>学生信息</CardTitle>
+    </CardHeader>
+    <CardContent>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <p class="text-sm text-gray-600">姓名</p>
+          <p class="text-lg">{{ currentUser.realName }}</p>
         </div>
-      </CardContent>
-    </Card>
+        <div>
+          <p class="text-sm text-gray-600">学号</p>
+          <p class="text-lg">{{ currentUser.username }}</p>
+        </div>
+        <div>
+          <p class="text-sm text-gray-600">专业</p>
+          <p class="text-lg">{{ currentUser.major || '未设置专业' }}</p>
+        </div>
+      </div>
+    </CardContent>
+  </Card>
 
     <!-- 四个上传卡片区域 -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -435,9 +435,6 @@ const categories: CategoryConfig[] = [
 ];
 
 const props = defineProps<{
-  studentName: string;
-  studentId: string;
-  major: string;
   applications: Application[];
 }>();
 
@@ -594,7 +591,11 @@ const uploadSingleFile = async (fileItem: FileItem) => {
       }
     );
     
-    if (response.success && response.fileUrl) {
+    if (response.error) {
+      fileItem.uploadStatus = 'error';
+      uploadError.value = response.message || response.error || '文件上传失败';
+      console.error('文件上传失败:', response);
+    } else if (response.fileUrl) {
       fileItem.uploadStatus = 'success';
       fileItem.uploadProgress = 100;
       fileItem.fileUrl = response.fileUrl;
@@ -605,8 +606,9 @@ const uploadSingleFile = async (fileItem: FileItem) => {
         console.log('当前files数组:', files.value);
       }
     } else {
+      // 响应中没有error也没有fileUrl，视为上传失败
       fileItem.uploadStatus = 'error';
-      uploadError.value = response.message || '文件上传失败';
+      uploadError.value = '文件上传失败：未返回有效的文件信息';
       console.error('文件上传失败:', response);
     }
   } catch (error: any) {
@@ -815,8 +817,8 @@ const handleSubmit = async () => {
     
     // 创建符合 CreateApplicationRequest 接口的请求对象
     const request: CreateApplicationRequest = {
-      studentId: props.studentId, // 使用固定的 studentId
-      studentName: currentUser.value?.name || props.studentName, // 从 authStore.user.name 读取
+      studentId: currentUser.value.username, // 使用auth.currentUser.username作为学号
+      studentName: currentUser.value.realName, // 使用auth.currentUser.realName作为真实姓名
       type: formData.value.subType, // 使用具体类型而不是大类
       title: formData.value.title,
       description: formData.value.description,

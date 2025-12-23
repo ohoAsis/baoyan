@@ -27,29 +27,45 @@ const router = createRouter({
       {
         path: '/admin',
         name: 'Admin',
-        component: () => import('../views/AdminHome.vue'),
-        meta: { requiresAuth: true, role: 'admin' }
+        redirect: '/admin/users',
+        meta: { requiresAuth: true, role: 'admin' },
+        children: [
+          {
+            path: 'users',
+            name: 'AdminUsers',
+            component: () => import('../views/admin/UsersView.vue')
+          }
+        ]
       }
   ]
 });
 
+// 导入auth store
+import { useAuth } from '../stores/auth';
+
 // 路由守卫
-router.beforeEach((to, _from, next) => {
-  // 获取token和用户信息
-  const token = localStorage.getItem('auth_token');
-  const savedUser = localStorage.getItem('currentUser');
-  const currentUser = savedUser ? JSON.parse(savedUser) : null;
+router.beforeEach(async (to, _from, next) => {
+  const { isInitialized, currentUser, initializeUser, getToken } = useAuth();
   
-  // 1. 首先处理 /login 路径
+  // 1. 如果用户信息尚未初始化，先初始化
+  if (!isInitialized.value) {
+    await initializeUser();
+  }
+  
+  // 2. 获取最新的token和用户信息
+  const token = getToken();
+  const user = currentUser.value;
+  
+  // 3. 首先处理 /login 路径
   if (to.path === '/login') {
     // 如果已登录，根据role跳转到对应首页
-    if (token && currentUser && currentUser.role) {
-      if (currentUser.role === 'student') {
+    if (token && user && user.role) {
+      if (user.role === 'student') {
         next('/student');
-      } else if (currentUser.role === 'reviewer') {
+      } else if (user.role === 'reviewer') {
         next('/reviewer');
-      } else if (currentUser.role === 'admin') {
-        next('/admin');
+      } else if (user.role === 'admin') {
+        next('/admin/users');
       } else {
         // 未知角色，允许访问登录页
         next();
@@ -61,23 +77,23 @@ router.beforeEach((to, _from, next) => {
     return;
   }
   
-  // 2. 处理需要认证的页面
+  // 4. 处理需要认证的页面
   if (to.meta.requiresAuth === true) {
     // 未登录，重定向到登录页
-    if (!token || !currentUser || !currentUser.role) {
+    if (!token || !user || !user.role) {
       next('/login');
       return;
     }
     
-    // 3. 检查角色权限
-    if (to.meta.role && currentUser.role !== to.meta.role) {
+    // 5. 检查角色权限
+    if (to.meta.role && user.role !== to.meta.role) {
       // 角色不匹配，重定向到登录页
       next('/login');
       return;
     }
   }
   
-  // 4. 其他情况，允许访问
+  // 6. 其他情况，允许访问
   next();
 });
 

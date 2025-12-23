@@ -43,11 +43,10 @@ public class ApplicationDTO {
         // 直接设置Long类型的id
         dto.setId(application.getId());
         
-        // 设置学生ID和学生姓名
-        if (application.getStudent() != null) {
-            dto.setStudentId(application.getStudent().getStudentId());
-            dto.setStudentName(application.getStudent().getName());
-        }
+        // 设置学生ID
+        dto.setStudentId(application.getStudentId());
+        // 暂时设置学生姓名为空，因为当前阶段不依赖Student实体
+        dto.setStudentName("");
         
         // 复制其他属性
         dto.setType(application.getType());

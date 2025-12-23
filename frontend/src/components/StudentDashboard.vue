@@ -13,8 +13,8 @@
           </div>
           <div class="flex items-center space-x-4">
             <div class="text-right">
-              <p class="text-sm">{{ user.name }}</p>
-              <p class="text-xs text-gray-500">学号: {{ user.studentId }}</p>
+              <p class="text-sm">{{ currentUser.realName }}</p>
+              <p class="text-xs text-gray-500">学号: {{ currentUser.username }}</p>
             </div>
             <Button 
               variant="ghost" 
@@ -56,9 +56,9 @@
           <!-- Material Upload Content -->
           <div v-show="activeTab === 'upload'" class="space-y-6">
             <UploadPage
-              :student-name="user.name"
-              :student-id="user.studentId!"
-              :major="user.major || '未设置专业'"
+              :student-name="currentUser.realName"
+              :student-id="currentUser.username"
+              :major="currentUser.major || '未设置专业'"
               :applications="applications"
               @submit="reloadApplications"
             />
@@ -138,10 +138,6 @@ import StatusBadge from './StatusBadge.vue';
 import { applicationsApi } from '../api/applications';
 import { useAuth } from '../stores/auth';
 
-const props = defineProps<{
-  user: User;
-}>();
-
 const emit = defineEmits<{
   logout: [];
 }>();
@@ -159,12 +155,7 @@ const tabs = [
 const reloadApplications = async () => {
   try {
     // 获取当前登录学生的 studentId
-    const studentId = currentUser.value?.studentId || props.user.studentId;
-    
-    if (!studentId) {
-      console.error('无法获取学生ID');
-      return;
-    }
+    const studentId = currentUser.value?.username;
     
     // 调用 API 获取申请数据
     const applicationsData = await applicationsApi.getByStudentId(studentId);

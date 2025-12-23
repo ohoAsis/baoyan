@@ -82,4 +82,41 @@ public class AuthController {
 
         return ResponseEntity.ok(response);
     }
+
+    /**
+     * 获取当前登录用户信息
+     * GET /api/auth/me
+     * @return 当前登录用户信息
+     */
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser() {
+        // 从ThreadLocal获取当前用户ID
+        Long userId = com.example.baoyan_assistant.util.UserContext.getUserId();
+        
+        if (userId == null) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "未登录");
+            return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
+        }
+        
+        // 根据用户ID查询用户信息
+        Optional<User> optionalUser = userRepository.findById(userId);
+        
+        if (optionalUser.isEmpty()) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "用户不存在");
+            return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
+        }
+        
+        User currentUser = optionalUser.get();
+        
+        // 构建返回结果
+        Map<String, Object> response = new HashMap<>();
+        response.put("userId", currentUser.getId());
+        response.put("role", currentUser.getRole());
+        response.put("username", currentUser.getUsername());
+        response.put("realName", currentUser.getRealName());
+        
+        return ResponseEntity.ok(response);
+    }
 }

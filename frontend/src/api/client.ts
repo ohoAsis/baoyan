@@ -22,6 +22,11 @@ apiClient.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
     
+    // 如果是FormData请求，删除默认的Content-Type，让axios自动生成
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
+    
     return config;
   },
   (error) => {
@@ -35,18 +40,25 @@ apiClient.interceptors.response.use(
     return response;
   },
   (error) => {
-    // 处理401错误
+    // 处理401错误 - 诊断模式降级
     if (error.response?.status === 401) {
-      // 清除用户状态和token
-      const { logout } = useAuth();
-      logout();
+      // 打印详细401响应内容，方便调试
+      console.error('401 Unauthorized Response:', {
+        url: error.config?.url,
+        method: error.config?.method,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        headers: error.response?.headers
+      });
       
-      // 跳转到登录页
-      window.location.href = '/login';
+      // 简单提示错误，不执行logout/redirect
+      alert('请求失败：未授权访问（401），请检查控制台获取详细信息');
+    } else {
+      // 处理其他错误
+      console.error('API Error:', error);
     }
     
-    // 处理其他错误
-    console.error('API Error:', error);
     return Promise.reject(error);
   }
 );

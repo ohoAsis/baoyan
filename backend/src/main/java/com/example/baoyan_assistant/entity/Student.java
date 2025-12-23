@@ -314,6 +314,8 @@ public class Student {
     @Column
     private Boolean finalApproved;
 
+
+
     // ==================== 关联关系字段 ====================
 
     /**

@@ -2,12 +2,10 @@ package com.example.baoyan_assistant.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 
 @Configuration
 @EnableWebSecurity
@@ -29,16 +27,8 @@ public class SecurityConfig {
             // 配置授权规则
             .authorizeHttpRequests(authorizeHttpRequests ->
                 authorizeHttpRequests
-                    // 允许登录接口无需认证
-                    .requestMatchers("/api/auth/login").permitAll()
-                    // 其他/api/**接口需要认证
-                    .requestMatchers("/api/**").authenticated()
-                    // 其他请求都允许
+                    // 所有请求都允许，因为/api/**已经由UserAuthInterceptor处理
                     .anyRequest().permitAll()
-            )
-            // 配置未认证时的处理方式：返回401而不是302重定向
-            .exceptionHandling(exceptionHandling ->
-                exceptionHandling.authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
             );
 
         return http.build();
