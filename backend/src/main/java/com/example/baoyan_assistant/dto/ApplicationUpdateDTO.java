@@ -8,7 +8,6 @@ import jakarta.validation.constraints.NotBlank;
  */
 public class ApplicationUpdateDTO {
     
-    @NotBlank(message = "申请状态不能为空")
     private String status;
     
     private String reviewComment;

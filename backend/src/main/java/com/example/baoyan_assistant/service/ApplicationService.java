@@ -3,14 +3,19 @@ package com.example.baoyan_assistant.service;
 import com.example.baoyan_assistant.dto.ApplicationCreateDTO;
 import com.example.baoyan_assistant.dto.ApplicationUpdateDTO;
 import com.example.baoyan_assistant.entity.Application;
+import com.example.baoyan_assistant.entity.FileRecord;
 import com.example.baoyan_assistant.entity.Student;
 import com.example.baoyan_assistant.repository.ApplicationRepository;
 import com.example.baoyan_assistant.repository.StudentRepository;
+import com.example.baoyan_assistant.service.FileRecordService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,11 +27,19 @@ import java.util.Optional;
 @Transactional
 public class ApplicationService {
     
+    private static final Logger logger = LoggerFactory.getLogger(ApplicationService.class);
+    
     @Autowired
     private ApplicationRepository applicationRepository;
     
     @Autowired
     private StudentRepository studentRepository;
+    
+    @Autowired
+    private FileRecordService fileRecordService;
+    
+    @Autowired
+    private com.example.baoyan_assistant.repository.UserRepository userRepository;
     
     /**
      * 获取所有申请
@@ -56,11 +69,7 @@ public class ApplicationService {
      */
     @Transactional(readOnly = true)
     public List<Application> getByStudentId(String studentId) {
-        // 验证学生是否存在
-        if (!studentRepository.existsByStudentId(studentId)) {
-            throw new RuntimeException("学生不存在，学号: " + studentId);
-        }
-        
+        // 不再验证学生是否存在，直接返回申请列表
         return applicationRepository.findByStudentId(studentId);
     }
     
@@ -72,11 +81,7 @@ public class ApplicationService {
      */
     @Transactional(readOnly = true)
     public List<Application> getByStudentIdAndStatus(String studentId, String status) {
-        // 验证学生是否存在
-        if (!studentRepository.existsByStudentId(studentId)) {
-            throw new RuntimeException("学生不存在，学号: " + studentId);
-        }
-        
+        // 不再验证学生是否存在，直接返回申请列表
         return applicationRepository.findByStudentIdAndStatus(studentId, status);
     }
     
@@ -88,11 +93,7 @@ public class ApplicationService {
      */
     @Transactional(readOnly = true)
     public List<Application> getByStudentIdAndType(String studentId, String type) {
-        // 验证学生是否存在
-        if (!studentRepository.existsByStudentId(studentId)) {
-            throw new RuntimeException("学生不存在，学号: " + studentId);
-        }
-        
+        // 不再验证学生是否存在，直接返回申请列表
         return applicationRepository.findByStudentIdAndType(studentId, type);
     }
     
@@ -103,13 +104,31 @@ public class ApplicationService {
      * @throws RuntimeException 如果学生不存在
      */
     public Application create(ApplicationCreateDTO dto) {
-        // 根据 dto.studentId 查询学生
-        Student student = studentRepository.findByStudentId(dto.getStudentId())
-                .orElseThrow(() -> new RuntimeException("学生不存在，学号: " + dto.getStudentId()));
+        // 记录收到的fileIds
+        Long[] fileIds = dto.getFileIds();
+        logger.info("Create application, received fileIds: {}", fileIds == null ? "null" : java.util.Arrays.toString(fileIds));
         
-        // 创建 Application 并设置学生对象
+        // 从UserContext获取当前登录用户ID
+        Long userId = com.example.baoyan_assistant.util.UserContext.getUserId();
+        if (userId == null) {
+            throw new RuntimeException("未找到当前登录用户信息");
+        }
+        
+        // 查询当前登录用户
+        com.example.baoyan_assistant.entity.User currentUser = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("用户不存在，ID: " + userId));
+        
+        // 验证当前用户是否为学生角色
+        if (!"student".equals(currentUser.getRole())) {
+            throw new RuntimeException("只有学生角色可以提交申请");
+        }
+        
+        // 使用当前用户的用户名作为学号
+        String studentId = currentUser.getUsername();
+        
+        // 创建 Application 并设置学生ID
         Application application = new Application();
-        application.setStudent(student);  // 必须设置学生对象，而不是 studentId
+        application.setStudentId(studentId);  // 直接设置学生ID，不再关联Student实体
         application.setType(dto.getType());
         application.setTitle(dto.getTitle());
         application.setDescription(dto.getDescription());
@@ -117,15 +136,36 @@ public class ApplicationService {
         application.setStatus("pending");
         application.setSubmittedAt(LocalDateTime.now());
         
+        // 保存申请以获取applicationId
+        Application savedApplication = applicationRepository.save(application);
+        
         // 设置文件列表（如果有）
-        if (dto.getFiles() != null && !dto.getFiles().isEmpty()) {
-            application.setFiles(String.join(",", dto.getFiles()));
-        } else {
-            application.setFiles("");
+        if (dto.getFileIds() != null && dto.getFileIds().length > 0) {
+            // 根据fileIds查询对应的FileRecord
+            List<FileRecord> fileRecords = fileRecordService.findByIds(List.of(dto.getFileIds()));
+            
+            if (fileRecords.isEmpty()) {
+                throw new RuntimeException("未找到指定的文件记录");
+            }
+            
+            // 验证文件记录的上传者是否为当前用户
+            for (FileRecord fileRecord : fileRecords) {
+                if (!fileRecord.getUploaderId().equals(userId)) {
+                    throw new RuntimeException("无权访问其他用户上传的文件");
+                }
+            }
+            
+            // 将这些FileRecord.applicationId更新为新建的application.id
+            for (FileRecord fileRecord : fileRecords) {
+                fileRecord.setApplicationId(savedApplication.getId());
+            }
+            
+            // 保存更新后的FileRecord
+            List<FileRecord> updatedFileRecords = fileRecordService.saveAll(fileRecords);
         }
         
         // 保存并返回完整的 Application 对象
-        return applicationRepository.save(application);
+        return savedApplication;
     }
     
     /**
@@ -145,6 +185,9 @@ public class ApplicationService {
         Application application = applicationRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("申请不存在，ID: " + id));
         
+        // 记录旧状态
+        String oldStatus = application.getStatus();
+        
         // 更新状态
         if (dto.getStatus() != null && !dto.getStatus().trim().isEmpty()) {
             application.setStatus(dto.getStatus());
@@ -158,7 +201,44 @@ public class ApplicationService {
         // 每次更新都设置审核时间
         application.setReviewedAt(LocalDateTime.now());
         
-        return applicationRepository.save(application);
+        // 保存申请
+        Application savedApplication = applicationRepository.save(application);
+        
+        // 如果申请被审核通过，则同步更新Student表
+        if ("approved".equals(savedApplication.getStatus()) && !"approved".equals(oldStatus)) {
+            syncStudentScore(savedApplication);
+        }
+        
+        return savedApplication;
+    }
+    
+    /**
+     * 同步学生分数到Student表
+     * @param application 审核通过的申请
+     */
+    private void syncStudentScore(Application application) {
+        String studentId = application.getStudentId();
+        Double points = application.getPoints();
+        
+        // 根据studentId查找或创建Student
+        Student student = studentRepository.findByStudentId(studentId)
+                .orElseGet(() -> {
+                    // 不存在则创建新的Student
+                    Student newStudent = new Student();
+                    newStudent.setStudentId(studentId);
+                    newStudent.setName(""); // 暂时设置为空，后续可以从User获取或更新
+                    newStudent.setTotalScore(0.0);
+                    return newStudent;
+                });
+        
+        // 更新总分：累加当前申请的分数
+        Double currentTotal = student.getTotalScore() != null ? student.getTotalScore() : 0.0;
+        student.setTotalScore(currentTotal + points);
+        
+        // 更新时间会通过@PreUpdate自动设置
+        
+        // 保存Student
+        studentRepository.save(student);
     }
     
     /**
@@ -176,14 +256,9 @@ public class ApplicationService {
     /**
      * 根据学生ID删除所有申请
      * @param studentId 学生ID
-     * @throws RuntimeException 如果学生不存在
      */
     public void deleteByStudentId(String studentId) {
-        // 验证学生是否存在
-        if (!studentRepository.existsByStudentId(studentId)) {
-            throw new RuntimeException("学生不存在，学号: " + studentId);
-        }
-        
+        // 不再验证学生是否存在，直接删除申请
         List<Application> applications = applicationRepository.findByStudentId(studentId);
         for (Application application : applications) {
             applicationRepository.delete(application);
@@ -197,11 +272,7 @@ public class ApplicationService {
      */
     @Transactional(readOnly = true)
     public Optional<Application> getOptionalByStudentId(String studentId) {
-        // 验证学生是否存在
-        if (!studentRepository.existsByStudentId(studentId)) {
-            throw new RuntimeException("学生不存在，学号: " + studentId);
-        }
-        
+        // 不再验证学生是否存在，直接返回申请
         return applicationRepository.findOptionalByStudentId(studentId);
     }
 }

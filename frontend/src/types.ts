@@ -1,5 +1,5 @@
 // 用户角色类型
-export type UserRole = 'student' | 'reviewer';
+export type UserRole = 'student' | 'reviewer' | 'admin';
 
 // 用户信息类型
 export interface User {

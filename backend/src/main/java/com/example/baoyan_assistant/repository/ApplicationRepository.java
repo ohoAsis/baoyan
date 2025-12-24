@@ -21,7 +21,7 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
      * @param studentId 学生ID
      * @return 申请列表
      */
-    @Query("SELECT a FROM Application a WHERE a.student.studentId = :studentId")
+    @Query("SELECT a FROM Application a WHERE a.studentId = :studentId")
     List<Application> findByStudentId(@Param("studentId") String studentId);
     
     /**
@@ -30,7 +30,7 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
      * @param status 申请状态
      * @return 申请列表
      */
-    @Query("SELECT a FROM Application a WHERE a.student.studentId = :studentId AND a.status = :status")
+    @Query("SELECT a FROM Application a WHERE a.studentId = :studentId AND a.status = :status")
     List<Application> findByStudentIdAndStatus(@Param("studentId") String studentId, @Param("status") String status);
     
     /**
@@ -39,7 +39,7 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
      * @param type 申请类型
      * @return 申请列表
      */
-    @Query("SELECT a FROM Application a WHERE a.student.studentId = :studentId AND a.type = :type")
+    @Query("SELECT a FROM Application a WHERE a.studentId = :studentId AND a.type = :type")
     List<Application> findByStudentIdAndType(@Param("studentId") String studentId, @Param("type") String type);
     
     /**
@@ -49,7 +49,7 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
      * @param type 申请类型
      * @return 申请列表
      */
-    @Query("SELECT a FROM Application a WHERE a.student.studentId = :studentId AND a.status = :status AND a.type = :type")
+    @Query("SELECT a FROM Application a WHERE a.studentId = :studentId AND a.status = :status AND a.type = :type")
     List<Application> findByStudentIdAndStatusAndType(@Param("studentId") String studentId, @Param("status") String status, @Param("type") String type);
     
     /**
@@ -57,7 +57,7 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
      * @param studentId 学生ID
      * @return 申请对象（可选）
      */
-    @Query("SELECT a FROM Application a WHERE a.student.studentId = :studentId")
+    @Query("SELECT a FROM Application a WHERE a.studentId = :studentId")
     Optional<Application> findOptionalByStudentId(@Param("studentId") String studentId);
     
     /**

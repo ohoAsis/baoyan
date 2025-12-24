@@ -1,12 +1,14 @@
 package com.example.baoyan_assistant.dto;
 
 import com.example.baoyan_assistant.entity.Application;
+import com.example.baoyan_assistant.entity.FileRecord;
+import com.example.baoyan_assistant.dto.FileRecordDTO;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 申请信息DTO
@@ -30,25 +32,24 @@ public class ApplicationDTO {
     private LocalDateTime reviewedAt;
     
     private String reviewComment;
-    private List<String> files;
-    
+    private List<FileRecordDTO> files;
+
     // 默认构造函数
     public ApplicationDTO() {
     }
-    
+
     // 从实体转换为DTO的静态方法
-    public static ApplicationDTO fromEntity(Application application) {
+    public static ApplicationDTO fromEntity(Application application, List<FileRecord> files) {
         ApplicationDTO dto = new ApplicationDTO();
-        
+
         // 直接设置Long类型的id
         dto.setId(application.getId());
-        
-        // 设置学生ID和学生姓名
-        if (application.getStudent() != null) {
-            dto.setStudentId(application.getStudent().getStudentId());
-            dto.setStudentName(application.getStudent().getName());
-        }
-        
+
+        // 设置学生ID
+        dto.setStudentId(application.getStudentId());
+        // 暂时设置学生姓名为空，因为当前阶段不依赖Student实体
+        dto.setStudentName("");
+
         // 复制其他属性
         dto.setType(application.getType());
         dto.setTitle(application.getTitle());
@@ -58,28 +59,34 @@ public class ApplicationDTO {
         dto.setSubmittedAt(application.getSubmittedAt());
         dto.setReviewedAt(application.getReviewedAt());
         dto.setReviewComment(application.getReviewComment());
-        
+
         // 处理文件列表
-        if (application.getFiles() != null && !application.getFiles().isEmpty()) {
-            dto.setFiles(Arrays.asList(application.getFiles().split(",")));
+        if (files != null && !files.isEmpty()) {
+            List<FileRecordDTO> fileDTOs = FileRecordDTO.fromEntities(files);
+            dto.setFiles(fileDTOs);
         } else {
-            dto.setFiles(new ArrayList<>());
+            dto.setFiles(List.of());
         }
-        
+
         return dto;
     }
     
+    // 兼容旧版本的静态方法（用于向后兼容）
+    public static ApplicationDTO fromEntity(Application application) {
+        return fromEntity(application, List.of());
+    }
+
     // 从DTO转换为实体的静态方法
     public static Application toEntity(ApplicationDTO dto) {
         if (dto == null) {
             return null;
         }
-        
+
         Application application = new Application();
-        
+
         // 设置ID
         application.setId(dto.getId());
-        
+
         // 复制其他属性
         application.setType(dto.getType());
         application.setTitle(dto.getTitle());
@@ -89,111 +96,107 @@ public class ApplicationDTO {
         application.setSubmittedAt(dto.getSubmittedAt());
         application.setReviewedAt(dto.getReviewedAt());
         application.setReviewComment(dto.getReviewComment());
-        
-        // 处理文件列表转换为字符串
-        if (dto.getFiles() != null && !dto.getFiles().isEmpty()) {
-            application.setFiles(String.join(",", dto.getFiles()));
-        } else {
-            application.setFiles("");
-        }
-        
+
+        // 处理文件列表：在toEntity方法中不直接设置文件记录，
+        // 因为FileRecord需要与ApplicationId关联，而此时Application可能还没有ID
+
         return application;
     }
-    
+
     // Getter和Setter方法
     public Long getId() {
         return id;
     }
-    
+
     public void setId(Long id) {
         this.id = id;
     }
-    
+
     public String getStudentId() {
         return studentId;
     }
-    
+
     public void setStudentId(String studentId) {
         this.studentId = studentId;
     }
-    
+
     public String getStudentName() {
         return studentName;
     }
-    
+
     public void setStudentName(String studentName) {
         this.studentName = studentName;
     }
-    
+
     public String getType() {
         return type;
     }
-    
+
     public void setType(String type) {
         this.type = type;
     }
-    
+
     public String getTitle() {
         return title;
     }
-    
+
     public void setTitle(String title) {
         this.title = title;
     }
-    
+
     public String getDescription() {
         return description;
     }
-    
+
     public void setDescription(String description) {
         this.description = description;
     }
-    
+
     public Double getPoints() {
         return points;
     }
-    
+
     public void setPoints(Double points) {
         this.points = points;
     }
-    
+
     public String getStatus() {
         return status;
     }
-    
+
     public void setStatus(String status) {
         this.status = status;
     }
-    
+
     public LocalDateTime getSubmittedAt() {
         return submittedAt;
     }
-    
+
     public void setSubmittedAt(LocalDateTime submittedAt) {
         this.submittedAt = submittedAt;
     }
-    
+
     public LocalDateTime getReviewedAt() {
         return reviewedAt;
     }
-    
+
     public void setReviewedAt(LocalDateTime reviewedAt) {
         this.reviewedAt = reviewedAt;
     }
-    
+
     public String getReviewComment() {
         return reviewComment;
     }
-    
+
     public void setReviewComment(String reviewComment) {
         this.reviewComment = reviewComment;
     }
-    
-    public List<String> getFiles() {
+
+    public List<FileRecordDTO> getFiles() {
         return files;
     }
-    
-    public void setFiles(List<String> files) {
+
+    public void setFiles(List<FileRecordDTO> files) {
         this.files = files;
     }
 }
