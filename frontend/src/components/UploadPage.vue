@@ -1,28 +1,5 @@
 <template>
   <div class="space-y-6">
-    <!-- 学生信息卡片 -->
-  <Card class="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-    <CardHeader>
-      <CardTitle>学生信息</CardTitle>
-    </CardHeader>
-    <CardContent>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-          <p class="text-sm text-gray-600">姓名</p>
-          <p class="text-lg">{{ currentUser.realName }}</p>
-        </div>
-        <div>
-          <p class="text-sm text-gray-600">学号</p>
-          <p class="text-lg">{{ currentUser.username }}</p>
-        </div>
-        <div>
-          <p class="text-sm text-gray-600">专业</p>
-          <p class="text-lg">{{ currentUser.major || '未设置专业' }}</p>
-        </div>
-      </div>
-    </CardContent>
-  </Card>
-
     <!-- 四个上传卡片区域 -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <Card
@@ -59,7 +36,6 @@
     <Card>
       <CardHeader>
         <CardTitle>加分项审核进度</CardTitle>
-        <CardDescription>已提交的申请材料审核情况</CardDescription>
       </CardHeader>
       <CardContent>
         <div class="space-y-3">
@@ -145,11 +121,12 @@
               <Input
                 id="points"
                 type="number"
-                :min="1"
+                step="0.1"
+                :min="0.1"
                 :max="maxPoints"
                 placeholder="请输入申请分值"
                 :value="formData.points || ''"
-                @input="formData.points = parseInt(($event.target as HTMLInputElement).value) || 0"
+                @input="formData.points = parseFloat(($event.target as HTMLInputElement).value) || 0"
               />
               <span v-if="maxPoints > 0" class="text-sm text-gray-500">最高 {{ maxPoints }} 分</span>
             </div>
@@ -383,11 +360,21 @@ const categories: CategoryConfig[] = [
     icon: Trophy,
     color: 'text-yellow-600',
     types: [
-      { value: '国家级竞赛特等奖', label: '国家级竞赛特等奖', maxPoints: 25 },
-      { value: '国家级竞赛一等奖', label: '国家级竞赛一等奖', maxPoints: 20 },
-      { value: '省级竞赛一等奖', label: '省级竞赛一等奖', maxPoints: 15 },
-      { value: '省级竞赛二等奖', label: '省级竞赛二等奖', maxPoints: 10 },
-      { value: '校级竞赛一等奖', label: '校级竞赛一等奖', maxPoints: 5 },
+      { value: '国家级一等奖及以上-A+类', label: '国家级一等奖及以上（A+类）', maxPoints: 30 },
+      { value: '国家级一等奖及以上-A类', label: '国家级一等奖及以上（A类）', maxPoints: 15 },
+      { value: '国家级一等奖及以上-A-类', label: '国家级一等奖及以上（A-类）', maxPoints: 10 },
+      { value: '国家级二等奖-A+类', label: '国家级二等奖（A+类）', maxPoints: 15 },
+      { value: '国家级二等奖-A类', label: '国家级二等奖（A类）', maxPoints: 10 },
+      { value: '国家级二等奖-A-类', label: '国家级二等奖（A-类）', maxPoints: 5 },
+      { value: '国家级三等奖-A+类', label: '国家级三等奖（A+类）', maxPoints: 10 },
+      { value: '国家级三等奖-A类', label: '国家级三等奖（A类）', maxPoints: 5 },
+      { value: '国家级三等奖-A-类', label: '国家级三等奖（A-类）', maxPoints: 2 },
+      { value: '省级一等奖及以上-A+类', label: '省级一等奖及以上（A+类）', maxPoints: 5 },
+      { value: '省级一等奖及以上-A类', label: '省级一等奖及以上（A类）', maxPoints: 2 },
+      { value: '省级一等奖及以上-A-类', label: '省级一等奖及以上（A-类）', maxPoints: 1 },
+      { value: '省级二等奖-A+类', label: '省级二等奖（A+类）', maxPoints: 2 },
+      { value: '省级二等奖-A类', label: '省级二等奖（A类）', maxPoints: 1 },
+      { value: '省级二等奖-A-类', label: '省级二等奖（A-类）', maxPoints: 0.5 },
     ],
   },
   {
@@ -397,11 +384,10 @@ const categories: CategoryConfig[] = [
     icon: FileText,
     color: 'text-blue-600',
     types: [
-      { value: 'SCI一区论文', label: 'SCI一区论文（第一作者）', maxPoints: 30 },
-      { value: 'SCI二区论文', label: 'SCI二区论文（第一作者）', maxPoints: 25 },
-      { value: '核心期刊论文', label: '核心期刊论文（第一作者）', maxPoints: 20 },
-      { value: '国际会议论文', label: '国际会议论文（第一作者）', maxPoints: 15 },
-      { value: '普通期刊论文', label: '普通期刊论文（第一作者）', maxPoints: 10 },
+      { value: 'Nature/Science/Cell主刊或IF≥10的CELL子刊', label: 'Nature/Science/Cell主刊或IF≥10的CELL子刊', maxPoints: 20 },
+      { value: 'A类期刊/会议长文', label: 'A类期刊/会议长文', maxPoints: 10 },
+      { value: 'B类期刊/会议长文', label: 'B类期刊/会议长文', maxPoints: 6 },
+      { value: 'C类期刊/会议长文', label: 'C类期刊/会议长文', maxPoints: 1 },
     ],
   },
   {
@@ -411,10 +397,7 @@ const categories: CategoryConfig[] = [
     icon: Lightbulb,
     color: 'text-purple-600',
     types: [
-      { value: '发明专利', label: '国家发明专利（第一发明人）', maxPoints: 25 },
-      { value: '实用新型专利', label: '实用新型专利（第一发明人）', maxPoints: 15 },
-      { value: '外观设计专利', label: '外观设计专利（第一发明人）', maxPoints: 10 },
-      { value: '软件著作权', label: '软件著作权（第一作者）', maxPoints: 8 },
+      { value: '国家发明专利授权', label: '国家发明专利授权', maxPoints: 2 },
     ],
   },
   {
@@ -424,12 +407,26 @@ const categories: CategoryConfig[] = [
     icon: Award,
     color: 'text-green-600',
     types: [
-      { value: '国家级荣誉', label: '国家级荣誉称号', maxPoints: 15 },
-      { value: '省级荣誉', label: '省级荣誉称号', maxPoints: 10 },
-      { value: '校级荣誉', label: '校级荣誉称号', maxPoints: 5 },
-      { value: '志愿服务', label: '志愿服务（累计100小时以上）', maxPoints: 8 },
-      { value: '学生工作', label: '学生干部工作（一年以上）', maxPoints: 6 },
-      { value: '社会实践', label: '社会实践优秀个人', maxPoints: 5 },
+      { value: '国际组织实习', label: '国际组织实习（≥1学年）', maxPoints: 1 },
+      { value: '参军入伍-1年', label: '参军入伍（≥1年且<2年）', maxPoints: 1 },
+      { value: '参军入伍-2年', label: '参军入伍（≥2年）', maxPoints: 2 },
+      { value: '志愿服务', label: '志愿服务（工时≥200h，0.05/每2h）', maxPoints: 10 },
+      { value: '志愿服务表彰-国家级个人', label: '志愿服务表彰（国家级个人）', maxPoints: 1 },
+      { value: '志愿服务表彰-国家级团队队长', label: '志愿服务表彰（国家级团队队长）', maxPoints: 0.5 },
+      { value: '志愿服务表彰-省级个人', label: '志愿服务表彰（省级个人）', maxPoints: 0.5 },
+      { value: '志愿服务表彰-省级团队队长', label: '志愿服务表彰（省级团队队长）', maxPoints: 0.25 },
+      { value: '志愿服务表彰-校级个人', label: '志愿服务表彰（校级个人）', maxPoints: 0.25 },
+      { value: '志愿服务表彰-校级团队队长', label: '志愿服务表彰（校级团队队长）', maxPoints: 0.125 },
+      { value: '荣誉称号-国家级', label: '荣誉称号（国家级）', maxPoints: 2 },
+      { value: '荣誉称号-省级', label: '荣誉称号（省级）', maxPoints: 1 },
+      { value: '荣誉称号-校级', label: '荣誉称号（校级）', maxPoints: 0.2 },
+      { value: '学生干部', label: '学生干部（任期满1学年，系数×老师评分/100）', maxPoints: 5 },
+      { value: '体育比赛-国际冠军', label: '体育比赛（国际冠军）', maxPoints: 8 },
+      { value: '体育比赛-国际亚军', label: '体育比赛（国际亚军）', maxPoints: 6.5 },
+      { value: '体育比赛-国际季军or国家冠军', label: '体育比赛（国际季军or国家冠军）', maxPoints: 5 },
+      { value: '体育比赛-国家亚军or国际4-8名', label: '体育比赛（国家亚军or国际4–8名）', maxPoints: 3.5 },
+      { value: '体育比赛-国家季军', label: '体育比赛（国家季军）', maxPoints: 2 },
+      { value: '体育比赛-国家4-8名', label: '体育比赛（国家4–8名）', maxPoints: 1 },
     ],
   },
 ];

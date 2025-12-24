@@ -177,37 +177,6 @@
     <Dialog :open="showStudentDetail" @update:open="showStudentDetail = $event">
       <DialogContent class="max-w-4xl max-h-[90vh] overflow-y-auto">
         <div class="space-y-6">
-          <!-- 学生基本信息 -->
-          <div>
-            <h3 class="text-lg font-medium text-gray-900 mb-4">学生基本信息</h3>
-            <div class="grid grid-cols-2 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
-              <div>
-                <p class="text-xs text-gray-500">学号</p>
-                <p class="text-sm font-medium">{{ selectedStudent?.studentId }}</p>
-              </div>
-              <div>
-                <p class="text-xs text-gray-500">姓名</p>
-                <p class="text-sm font-medium">{{ selectedStudent?.name }}</p>
-              </div>
-              <div>
-                <p class="text-xs text-gray-500">专业</p>
-                <p class="text-sm font-medium">{{ selectedStudent?.major || '未设置' }}</p>
-              </div>
-              <div>
-                <p class="text-xs text-gray-500">年级</p>
-                <p class="text-sm font-medium">{{ selectedStudent?.grade || '未设置' }}</p>
-              </div>
-              <div>
-                <p class="text-xs text-gray-500">班级</p>
-                <p class="text-sm font-medium">{{ selectedStudent?.className || '未设置' }}</p>
-              </div>
-              <div>
-                <p class="text-xs text-gray-500">GPA</p>
-                <p class="text-sm font-medium">{{ selectedStudent?.gpa || '未设置' }}</p>
-              </div>
-            </div>
-          </div>
-
           <!-- 加分情况统计 -->
           <div>
             <h3 class="text-lg font-medium text-gray-900 mb-4">加分情况统计</h3>
@@ -276,9 +245,10 @@
                   <p class="text-xs text-gray-500 mb-2">附件文件：</p>
                   <div class="flex flex-wrap gap-2">
                     <span
-                      v-for="(file, index) in app.files"
-                      :key="index"
+                      v-for="file in app.files"
+                      :key="typeof file === 'string' ? file : file.id || index"
                       class="text-xs text-blue-600 hover:text-blue-800 underline cursor-pointer"
+                      @click="handleOpenFile(file)"
                     >
                       {{ getFileName(file) }}
                     </span>
@@ -323,6 +293,7 @@ import StatusBadge from './StatusBadge.vue';
 import Dialog from './ui/SimpleDialog.vue';
 import DialogContent from './ui/SimpleDialogContent.vue';
 import { studentsApi, applicationsApi } from '../api';
+import apiClient from '../api/client';
 
 const { user } = defineProps<{
   user: User;
@@ -464,11 +435,75 @@ const formatDateTime = (dateTime: string | undefined): string => {
   }
 };
 
-// 获取文件名（从路径中提取）
-const getFileName = (filePath: string): string => {
-  if (!filePath) return '';
-  const parts = filePath.split('/');
-  return parts[parts.length - 1] || filePath;
+// 获取文件名（支持 string / object(FileRecord) / null / undefined）
+const getFileName = (file: any): string => {
+  if (!file) return '';
+  
+  // 如果是字符串，按原逻辑从路径提取文件名
+  if (typeof file === 'string') {
+    const parts = file.split('/');
+    return parts[parts.length - 1] || file;
+  }
+  
+  // 如果是对象，优先使用 originalFileName，其次 storedFileName，最后从 fileUrl 提取
+  if (typeof file === 'object') {
+    if (file.originalFileName) return file.originalFileName;
+    if (file.storedFileName) return file.storedFileName;
+    if (file.fileUrl) {
+      const parts = file.fileUrl.split('/');
+      return parts[parts.length - 1] || '';
+    }
+  }
+  
+  // 其他情况返回 unknown
+  return 'unknown';
+};
+
+// 处理文件打开/下载
+const handleOpenFile = async (file: any) => {
+  try {
+    // 如果是字符串，直接作为URL打开
+    if (typeof file === 'string') {
+      window.open(file, '_blank');
+      return;
+    }
+    
+    // 如果是对象且有id，使用apiClient获取文件
+    if (typeof file === 'object' && file.id) {
+      // 使用 apiClient 获取文件，responseType 设为 blob
+      const response = await apiClient.get(`/files/${file.id}`, { 
+        responseType: 'blob' 
+      });
+      
+      // 创建 blob URL
+      const blobUrl = URL.createObjectURL(response.data);
+      
+      // 根据文件类型判断处理方式
+      if (file.fileType && (file.fileType.startsWith('image/') || file.fileType === 'application/pdf')) {
+        // 图片或 PDF，在新窗口预览
+        window.open(blobUrl, '_blank');
+      } else {
+        // 其他类型，触发下载
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = file.originalFileName || file.storedFileName || 'unknown_file';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // 释放 blob URL
+        setTimeout(() => {
+          URL.revokeObjectURL(blobUrl);
+        }, 100);
+      }
+    } else if (typeof file === 'object' && file.fileUrl) {
+      // 如果有fileUrl，直接打开
+      window.open(file.fileUrl, '_blank');
+    }
+  } catch (error: any) {
+    console.error('文件访问失败:', error);
+    alert('文件访问失败或无权限');
+  }
 };
 
 const handleLogout = () => {

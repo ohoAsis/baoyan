@@ -2,29 +2,21 @@
   <div class="min-h-screen flex items-center justify-center p-4 relative overflow-hidden" :style="backgroundStyle">
     <Card class="w-full max-w-md bg-white/60 backdrop-blur-md border-none shadow-xl transition-all duration-300 hover:shadow-2xl relative z-10">
       <CardHeader class="text-center space-y-2">
-        <!-- 登录图标 -->
-        <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg text-white mb-2">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-          </svg>
+        <!-- 登录图标和标题 -->
+        <div class="flex items-center justify-center gap-3">
+          <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg text-white">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+          </div>
+          <CardTitle class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">保研加分小助手</CardTitle>
         </div>
-        <CardTitle class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">保研加分小助手</CardTitle>
         <CardDescription class="text-gray-600">请登录您的账户以继续使用系统</CardDescription>
       </CardHeader>
       <CardContent class="space-y-5">
-        <!-- 用户类型选择 -->
-        <div class="space-y-2">
-          <Label for="role" class="text-gray-700 font-medium">用户类型</Label>
-          <Select v-model="role" placeholder="请选择用户类型" class="border-gray-300 focus:border-blue-500 focus:ring-blue-500/20">
-            <option value="student">学生</option>
-            <option value="reviewer">审核老师</option>
-            <option value="admin">管理员</option>
-          </Select>
-        </div>
-
         <!-- 用户名输入 -->
         <div class="space-y-2">
-          <Label for="username" class="text-gray-700 font-medium">{{ role === 'student' ? '学号' : role === 'admin' ? '用户名' : '工号' }}</Label>
+          <Label for="username" class="text-gray-700 font-medium">工号/学号</Label>
           <div class="relative">
             <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -33,7 +25,7 @@
             </span>
             <Input
               id="username"
-              :placeholder="role === 'student' ? '请输入学号' : role === 'admin' ? '请输入用户名' : '请输入工号'"
+              placeholder="请输入工号或学号"
               v-model="username"
               class="pl-10 border-gray-300 focus:border-blue-500 focus:ring-blue-500/20 transition-all"
               :class="{ 'ring-2 ring-blue-100': username.length > 0 }"
@@ -89,13 +81,6 @@
         <div v-if="errorMessage" class="text-sm text-red-500 text-center bg-red-50 rounded-lg p-3 border border-red-100">
           {{ errorMessage }}
         </div>
-
-        <!-- 演示账号信息 -->
-        <div class="text-sm text-gray-500 text-center space-y-1 bg-gray-50 rounded-lg p-3 border border-gray-100">
-          <p class="font-medium text-gray-600">演示账号：</p>
-          <p>学生 - 用户名: student, 密码: 123456</p>
-          <p>审核老师 - 用户名: reviewer, 密码: 123456</p>
-        </div>
       </CardContent>
     </Card>
   </div>
@@ -112,7 +97,6 @@ import CardTitle from './ui/CardTitle.vue';
 import Button from './ui/Button.vue';
 import Input from './ui/Input.vue';
 import Label from './ui/Label.vue';
-import Select from './ui/Select.vue';
 import loginBg from '../assets/login-bg.jpg';
 import { authApi } from '../api/auth';
 
@@ -122,7 +106,6 @@ const emit = defineEmits<{
 
 const username = ref('');
 const password = ref('');
-const role = ref<UserRole>('student');
 const isLoggingIn = ref(false);
 const buttonKey = ref(0); // 用于强制重新渲染按钮以触发动画
 const errorMessage = ref('');

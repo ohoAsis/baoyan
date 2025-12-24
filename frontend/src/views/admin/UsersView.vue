@@ -70,30 +70,26 @@
           <TableHeader>
             <TableRow>
               <TableHead>学号 / 工号</TableHead>
-              <TableHead>用户名</TableHead>
               <TableHead>角色</TableHead>
               <TableHead>状态</TableHead>
-              <TableHead>创建时间</TableHead>
               <TableHead>操作</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             <TableRow v-if="isLoading">
-              <TableCell colspan="6" class="text-center py-8">
+              <TableCell colspan="4" class="text-center py-8">
                 加载中...
               </TableCell>
             </TableRow>
             <TableRow v-else-if="users.length === 0">
-              <TableCell colspan="6" class="text-center py-8 text-gray-500">
+              <TableCell colspan="4" class="text-center py-8 text-gray-500">
                 暂无数据
               </TableCell>
             </TableRow>
             <TableRow v-for="user in users" :key="user.id">
               <TableCell>{{ user.username || '-' }}</TableCell>
-              <TableCell>{{ user.username }}</TableCell>
               <TableCell>{{ user.role }}</TableCell>
               <TableCell>{{ user.isEnabled ? '启用' : '禁用' }}</TableCell>
-              <TableCell>{{ user.createdAt }}</TableCell>
               <TableCell>
                 <Button 
                   :variant="user.isEnabled ? 'secondary' : 'primary'" 
