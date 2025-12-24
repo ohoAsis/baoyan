@@ -454,7 +454,7 @@ const formData = ref({
   description: '',
   points: 0,
 });
-const files = ref<string[]>([]); // 存储上传后的文件URL
+const files = ref<number[]>([]); // 存储上传后的file_record.id
 const fileInputRef = ref<HTMLInputElement | null>(null);
 const isUploading = ref(false);
 const uploadError = ref('');
@@ -471,6 +471,7 @@ interface FileItem {
   uploadStatus: 'pending' | 'uploading' | 'success' | 'error';
   uploadProgress: number;
   fileUrl?: string;
+  id?: number; // 添加file_record.id
 }
 
 const fileList = ref<FileItem[]>([]);
@@ -595,14 +596,15 @@ const uploadSingleFile = async (fileItem: FileItem) => {
       fileItem.uploadStatus = 'error';
       uploadError.value = response.message || response.error || '文件上传失败';
       console.error('文件上传失败:', response);
-    } else if (response.fileUrl) {
+    } else if (response.id && response.fileUrl) {
       fileItem.uploadStatus = 'success';
       fileItem.uploadProgress = 100;
+      fileItem.id = response.id; // 保存file_record.id
       fileItem.fileUrl = response.fileUrl;
       // 添加到files数组（用于提交申请）
-      if (!files.value.includes(response.fileUrl)) {
-        files.value.push(response.fileUrl);
-        console.log('文件上传成功，已添加到files数组:', response.fileUrl);
+      if (!files.value.includes(response.id)) {
+        files.value.push(response.id);
+        console.log('文件上传成功，已添加到files数组:', response.id);
         console.log('当前files数组:', files.value);
       }
     } else {
@@ -765,8 +767,8 @@ const removeFile = (index: number) => {
   }
   
   // 如果文件已上传成功，从files数组中移除
-  if (fileItem.fileUrl && files.value.includes(fileItem.fileUrl)) {
-    files.value = files.value.filter(url => url !== fileItem.fileUrl);
+  if (fileItem.id !== undefined && files.value.includes(fileItem.id)) {
+    files.value = files.value.filter(id => id !== fileItem.id);
   }
   
   // 从文件列表中移除
@@ -816,14 +818,14 @@ const handleSubmit = async () => {
     console.log('提交申请 - 文件列表:', files.value);
     
     // 创建符合 CreateApplicationRequest 接口的请求对象
-    const request: CreateApplicationRequest = {
+    const request: any = {
       studentId: currentUser.value.username, // 使用auth.currentUser.username作为学号
       studentName: currentUser.value.realName, // 使用auth.currentUser.realName作为真实姓名
       type: formData.value.subType, // 使用具体类型而不是大类
       title: formData.value.title,
       description: formData.value.description,
       points: formData.value.points,
-      files: files.value, // 使用文件名数组
+      fileIds: files.value, // 使用file_record.id数组
     };
 
     console.log('提交申请 - 请求数据:', request);

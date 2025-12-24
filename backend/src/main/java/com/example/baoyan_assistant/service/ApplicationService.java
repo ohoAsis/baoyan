@@ -8,6 +8,8 @@ import com.example.baoyan_assistant.entity.Student;
 import com.example.baoyan_assistant.repository.ApplicationRepository;
 import com.example.baoyan_assistant.repository.StudentRepository;
 import com.example.baoyan_assistant.service.FileRecordService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +26,8 @@ import java.util.Optional;
 @Service
 @Transactional
 public class ApplicationService {
+    
+    private static final Logger logger = LoggerFactory.getLogger(ApplicationService.class);
     
     @Autowired
     private ApplicationRepository applicationRepository;
@@ -100,6 +104,10 @@ public class ApplicationService {
      * @throws RuntimeException 如果学生不存在
      */
     public Application create(ApplicationCreateDTO dto) {
+        // 记录收到的fileIds
+        Long[] fileIds = dto.getFileIds();
+        logger.info("Create application, received fileIds: {}", fileIds == null ? "null" : java.util.Arrays.toString(fileIds));
+        
         // 从UserContext获取当前登录用户ID
         Long userId = com.example.baoyan_assistant.util.UserContext.getUserId();
         if (userId == null) {
@@ -132,36 +140,28 @@ public class ApplicationService {
         Application savedApplication = applicationRepository.save(application);
         
         // 设置文件列表（如果有）
-        if (dto.getFiles() != null && !dto.getFiles().isEmpty()) {
-            List<FileRecord> fileRecords = new ArrayList<>();
-            for (String fileUrl : dto.getFiles()) {
-                // 解析fileUrl获取storedFileName
-                // 假设fileUrl格式为 /uploads/原始文件名_时间戳_随机字符串.扩展名
-                String storedFileName = fileUrl.substring(fileUrl.lastIndexOf('/') + 1);
-                
-                FileRecord fileRecord = new FileRecord();
-                fileRecord.setFileUrl(fileUrl);
-                // 真实路径需要根据实际部署情况调整，这里使用相对路径
-                fileRecord.setRealPath("uploads/" + storedFileName);
-                // 原始文件名需要从storedFileName中提取，这里简化处理
-                String originalFileName = storedFileName.split("_")[0];
-                fileRecord.setOriginalFileName(originalFileName);
-                fileRecord.setStoredFileName(storedFileName);
-                // 文件大小和类型需要从前端获取，这里暂时设为默认值
-                fileRecord.setFileSize(0L);
-                fileRecord.setFileType("application/octet-stream");
-                fileRecord.setUploadTime(LocalDateTime.now());
-                // 使用当前用户ID作为uploaderId
-                fileRecord.setUploaderId(userId);
-                fileRecord.setApplicationId(savedApplication.getId());
-                fileRecord.setDeleted(false);
-                
-                fileRecords.add(fileRecord);
+        if (dto.getFileIds() != null && dto.getFileIds().length > 0) {
+            // 根据fileIds查询对应的FileRecord
+            List<FileRecord> fileRecords = fileRecordService.findByIds(List.of(dto.getFileIds()));
+            
+            if (fileRecords.isEmpty()) {
+                throw new RuntimeException("未找到指定的文件记录");
             }
             
-            // 保存文件记录
-            List<FileRecord> savedFileRecords = fileRecordService.saveAll(fileRecords);
-            savedApplication.setFiles(savedFileRecords);
+            // 验证文件记录的上传者是否为当前用户
+            for (FileRecord fileRecord : fileRecords) {
+                if (!fileRecord.getUploaderId().equals(userId)) {
+                    throw new RuntimeException("无权访问其他用户上传的文件");
+                }
+            }
+            
+            // 将这些FileRecord.applicationId更新为新建的application.id
+            for (FileRecord fileRecord : fileRecords) {
+                fileRecord.setApplicationId(savedApplication.getId());
+            }
+            
+            // 保存更新后的FileRecord
+            List<FileRecord> updatedFileRecords = fileRecordService.saveAll(fileRecords);
         }
         
         // 保存并返回完整的 Application 对象

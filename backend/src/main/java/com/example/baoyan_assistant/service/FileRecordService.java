@@ -94,6 +94,16 @@ public class FileRecordService {
     }
 
     /**
+     * 根据ID列表查询文件记录
+     * @param ids 文件记录ID列表
+     * @return 文件记录列表
+     */
+    @Transactional(readOnly = true)
+    public List<FileRecord> findByIds(List<Long> ids) {
+        return fileRecordRepository.findAllById(ids);
+    }
+
+    /**
      * 软删除文件记录
      * @param id 文件记录ID
      * @return 删除后的文件记录

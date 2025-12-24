@@ -4,7 +4,9 @@ import com.example.baoyan_assistant.dto.ApplicationCreateDTO;
 import com.example.baoyan_assistant.dto.ApplicationDTO;
 import com.example.baoyan_assistant.dto.ApplicationUpdateDTO;
 import com.example.baoyan_assistant.entity.Application;
+import com.example.baoyan_assistant.entity.FileRecord;
 import com.example.baoyan_assistant.service.ApplicationService;
+import com.example.baoyan_assistant.service.FileRecordService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +28,9 @@ public class ApplicationController {
     @Autowired
     private ApplicationService applicationService;
     
+    @Autowired
+    private FileRecordService fileRecordService;
+    
     /**
      * 获取所有申请
      * GET /api/applications
@@ -35,7 +40,11 @@ public class ApplicationController {
     public ResponseEntity<List<ApplicationDTO>> getAllApplications() {
         List<Application> applications = applicationService.getAll();
         List<ApplicationDTO> applicationDTOs = applications.stream()
-                .map(ApplicationDTO::fromEntity)
+                .map(application -> {
+                    // 显式查询关联的FileRecord
+                    List<FileRecord> files = fileRecordService.getByApplicationId(application.getId());
+                    return ApplicationDTO.fromEntity(application, files);
+                })
                 .collect(Collectors.toList());
         return ResponseEntity.ok(applicationDTOs);
     }
@@ -50,7 +59,9 @@ public class ApplicationController {
     public ResponseEntity<ApplicationDTO> getApplicationById(@PathVariable Long id) {
         try {
             Application application = applicationService.getById(id);
-            return ResponseEntity.ok(ApplicationDTO.fromEntity(application));
+            // 显式查询关联的FileRecord
+            List<FileRecord> files = fileRecordService.getByApplicationId(application.getId());
+            return ResponseEntity.ok(ApplicationDTO.fromEntity(application, files));
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }
@@ -67,7 +78,11 @@ public class ApplicationController {
         try {
             List<Application> applications = applicationService.getByStudentId(studentId);
             List<ApplicationDTO> applicationDTOs = applications.stream()
-                    .map(ApplicationDTO::fromEntity)
+                    .map(application -> {
+                        // 显式查询关联的FileRecord
+                        List<FileRecord> files = fileRecordService.getByApplicationId(application.getId());
+                        return ApplicationDTO.fromEntity(application, files);
+                    })
                     .collect(Collectors.toList());
             return ResponseEntity.ok(applicationDTOs);
         } catch (RuntimeException e) {
@@ -89,7 +104,11 @@ public class ApplicationController {
         try {
             List<Application> applications = applicationService.getByStudentIdAndStatus(studentId, status);
             List<ApplicationDTO> applicationDTOs = applications.stream()
-                    .map(ApplicationDTO::fromEntity)
+                    .map(application -> {
+                        // 显式查询关联的FileRecord
+                        List<FileRecord> files = fileRecordService.getByApplicationId(application.getId());
+                        return ApplicationDTO.fromEntity(application, files);
+                    })
                     .collect(Collectors.toList());
             return ResponseEntity.ok(applicationDTOs);
         } catch (RuntimeException e) {

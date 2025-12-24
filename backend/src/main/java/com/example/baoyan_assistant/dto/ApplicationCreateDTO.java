@@ -28,12 +28,12 @@ public class ApplicationCreateDTO {
     @Positive(message = "申请分数必须为正数")
     private Double points;
     
-    private List<String> files;
-    
+    private Long[] fileIds;
+
     // 默认构造函数
     public ApplicationCreateDTO() {
     }
-    
+
     // 带参构造函数
     public ApplicationCreateDTO(String studentId, String type, String title, String description, Double points) {
         this.studentId = studentId;
@@ -42,53 +42,53 @@ public class ApplicationCreateDTO {
         this.description = description;
         this.points = points;
     }
-    
+
     // Getter和Setter方法
     public String getStudentId() {
         return studentId;
     }
-    
+
     public void setStudentId(String studentId) {
         this.studentId = studentId;
     }
-    
+
     public String getType() {
         return type;
     }
-    
+
     public void setType(String type) {
         this.type = type;
     }
-    
+
     public String getTitle() {
         return title;
     }
-    
+
     public void setTitle(String title) {
         this.title = title;
     }
-    
+
     public String getDescription() {
         return description;
     }
-    
+
     public void setDescription(String description) {
         this.description = description;
     }
-    
+
     public Double getPoints() {
         return points;
     }
-    
+
     public void setPoints(Double points) {
         this.points = points;
     }
-    
-    public List<String> getFiles() {
-        return files;
+
+    public Long[] getFileIds() {
+        return fileIds;
     }
-    
-    public void setFiles(List<String> files) {
-        this.files = files;
+
+    public void setFileIds(Long[] fileIds) {
+        this.fileIds = fileIds;
     }
 }

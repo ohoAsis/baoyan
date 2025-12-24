@@ -1,6 +1,7 @@
 import apiClient from './client';
 
 export interface UploadFileResponse {
+  id: number; // 添加file_record.id
   fileUrl: string;
   storedFileName?: string;
   originalFileName?: string;

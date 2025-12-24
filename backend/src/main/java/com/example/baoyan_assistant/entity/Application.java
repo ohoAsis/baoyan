@@ -2,8 +2,6 @@ package com.example.baoyan_assistant.entity;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * 申请实体类
@@ -76,11 +74,7 @@ public class Application {
     @Column(name = "review_comment", columnDefinition = "TEXT")
     private String reviewComment;
 
-    /**
-     * 关联的文件记录列表
-     */
-    @OneToMany(mappedBy = "application", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<FileRecord> files = new ArrayList<>();
+
 
     /**
      * 创建时间
@@ -215,14 +209,6 @@ public class Application {
 
     public void setReviewComment(String reviewComment) {
         this.reviewComment = reviewComment;
-    }
-
-    public List<FileRecord> getFiles() {
-        return files;
-    }
-
-    public void setFiles(List<FileRecord> files) {
-        this.files = files;
     }
 
     public LocalDateTime getCreatedAt() {

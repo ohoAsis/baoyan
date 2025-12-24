@@ -1,6 +1,9 @@
 package com.example.baoyan_assistant.controller;
 
+import com.example.baoyan_assistant.entity.FileRecord;
+import com.example.baoyan_assistant.service.FileRecordService;
 import com.example.baoyan_assistant.service.FileValidationService;
+import com.example.baoyan_assistant.util.UserContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +34,9 @@ public class FileUploadController {
     
     @Autowired
     private FileValidationService fileValidationService;
+    
+    @Autowired
+    private FileRecordService fileRecordService;
     
     @Value("${file.upload.dir:uploads}")
     private String uploadDir;
@@ -70,7 +76,25 @@ public class FileUploadController {
             // 获取文件MIME类型
             String fileType = file.getContentType() != null ? file.getContentType() : "application/octet-stream";
             
+            // 保存文件记录到数据库
+            FileRecord fileRecord = new FileRecord();
+            fileRecord.setFileUrl(fileUrl);
+            fileRecord.setRealPath(realPath);
+            fileRecord.setOriginalFileName(file.getOriginalFilename());
+            fileRecord.setStoredFileName(storedFileName);
+            fileRecord.setFileSize(file.getSize());
+            fileRecord.setFileType(fileType);
+            // 从UserContext获取当前登录用户ID
+            Long uploaderId = UserContext.getUserId();
+            if (uploaderId == null) {
+                throw new RuntimeException("未找到当前登录用户信息");
+            }
+            fileRecord.setUploaderId(uploaderId);
+            // 保存到数据库
+            FileRecord savedFileRecord = fileRecordService.save(fileRecord);
+            
             Map<String, Object> response = new HashMap<>();
+            response.put("id", savedFileRecord.getId()); // 返回file_record.id
             response.put("fileUrl", fileUrl);
             response.put("storedFileName", storedFileName);
             response.put("realPath", realPath);
@@ -78,8 +102,8 @@ public class FileUploadController {
             response.put("fileSize", file.getSize());
             response.put("fileType", fileType);
             
-            logger.info("文件上传成功: {}, 存储为: {}, 大小: {} bytes, MIME类型: {}",
-                    file.getOriginalFilename(), storedFileName, file.getSize(), fileType);
+            logger.info("文件上传成功: {}, 存储为: {}, 大小: {} bytes, MIME类型: {}, 记录ID: {}",
+                    file.getOriginalFilename(), storedFileName, file.getSize(), fileType, savedFileRecord.getId());
             
             return ResponseEntity.ok(response);
             
@@ -137,7 +161,25 @@ public class FileUploadController {
                     // 获取文件MIME类型
                     String fileType = file.getContentType() != null ? file.getContentType() : "application/octet-stream";
                     
+                    // 保存文件记录到数据库
+                    FileRecord fileRecord = new FileRecord();
+                    fileRecord.setFileUrl(fileUrl);
+                    fileRecord.setRealPath(realPath);
+                    fileRecord.setOriginalFileName(file.getOriginalFilename());
+                    fileRecord.setStoredFileName(storedFileName);
+                    fileRecord.setFileSize(file.getSize());
+                    fileRecord.setFileType(fileType);
+                    // 从UserContext获取当前登录用户ID
+                    Long uploaderId = UserContext.getUserId();
+                    if (uploaderId == null) {
+                        throw new RuntimeException("未找到当前登录用户信息");
+                    }
+                    fileRecord.setUploaderId(uploaderId);
+                    // 保存到数据库
+                    FileRecord savedFileRecord = fileRecordService.save(fileRecord);
+                    
                     Map<String, Object> fileInfo = new HashMap<>();
+                    fileInfo.put("id", savedFileRecord.getId()); // 返回file_record.id
                     fileInfo.put("fileUrl", fileUrl);
                     fileInfo.put("storedFileName", storedFileName);
                     fileInfo.put("realPath", realPath);
@@ -146,8 +188,8 @@ public class FileUploadController {
                     fileInfo.put("fileType", fileType);
                     uploadedFiles.add(fileInfo);
                     
-                    logger.info("文件上传成功: {}, 存储为: {}, 大小: {} bytes, MIME类型: {}",
-                            file.getOriginalFilename(), storedFileName, file.getSize(), fileType);
+                    logger.info("文件上传成功: {}, 存储为: {}, 大小: {} bytes, MIME类型: {}, 记录ID: {}",
+                            file.getOriginalFilename(), storedFileName, file.getSize(), fileType, savedFileRecord.getId());
                     
                 } catch (IOException e) {
                     String errorMsg = (file.getOriginalFilename() != null ? file.getOriginalFilename() : "未知文件") + ": " + e.getMessage();

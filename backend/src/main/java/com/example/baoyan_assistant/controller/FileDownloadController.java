@@ -33,20 +33,20 @@ public class FileDownloadController {
     private FileAccessService fileAccessService;
 
     /**
-     * 下载文件
+     * 获取文件（支持预览和下载）
      * GET /api/files/{fileId}
      * @param fileId 文件ID
      * @return 文件流
      */
     @GetMapping("/{fileId}")
-    public ResponseEntity<Resource> downloadFile(@PathVariable Long fileId) {
+    public ResponseEntity<Resource> getFile(@PathVariable Long fileId) {
         
         // 从UserContext获取用户信息
         Long userId = UserContext.getUserId();
         String userRole = UserContext.getUserRole();
         
         // 验证用户权限
-        boolean isReviewer = "reviewer".equals(userRole);
+        boolean isReviewer = "reviewer".equals(userRole) || "admin".equals(userRole);
         boolean canAccess = fileAccessService.canAccessFile(userId, fileId, isReviewer);
         
         if (!canAccess) {
@@ -58,7 +58,7 @@ public class FileDownloadController {
         FileRecord fileRecord = fileAccessService.getFileRecord(fileId);
         
         // 记录访问日志
-        logger.info("用户下载文件: userId={}, fileId={}, fileName={}, userRole={}", 
+        logger.info("用户访问文件: userId={}, fileId={}, fileName={}, userRole={}", 
                 userId, fileId, fileRecord.getOriginalFileName(), userRole);
         
         // 读取文件
@@ -77,10 +77,33 @@ public class FileDownloadController {
         
         // 设置Content-Disposition，支持中文文件名
         String encodedFileName = URLEncoder.encode(fileRecord.getOriginalFileName(), StandardCharsets.UTF_8);
-        headers.setContentDispositionFormData("attachment", encodedFileName);
+        
+        // 决定是预览还是下载
+        String fileType = fileRecord.getFileType();
+        if (isPreviewable(fileType)) {
+            // 预览：PDF和图片类型
+            headers.setContentDispositionFormData("inline", encodedFileName);
+        } else {
+            // 下载：其他类型
+            headers.setContentDispositionFormData("attachment", encodedFileName);
+        }
         
         return ResponseEntity.ok()
                 .headers(headers)
                 .body(resource);
+    }
+    
+    /**
+     * 判断文件类型是否支持预览
+     * @param fileType 文件MIME类型
+     * @return true if previewable, false otherwise
+     */
+    private boolean isPreviewable(String fileType) {
+        if (fileType == null) {
+            return false;
+        }
+        
+        // 支持预览的文件类型：PDF和图片
+        return fileType.startsWith("image/") || "application/pdf".equals(fileType);
     }
 }

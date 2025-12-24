@@ -26,9 +26,14 @@
             <h4 class="text-sm font-medium text-gray-900">上传文件</h4>
             <div class="mt-2">
               <div v-if="currentApplication?.files && currentApplication.files.length > 0" class="space-y-2">
-                <div v-for="(file, index) in currentApplication.files" :key="index" class="flex items-center space-x-2">
+                <div v-for="file in currentApplication.files" :key="file.id" class="flex items-center space-x-2">
                   <FileText class="h-4 w-4 text-gray-500" />
-                  <span class="text-sm text-blue-600 underline cursor-pointer">{{ file }}</span>
+                  <span 
+                    class="text-sm text-blue-600 underline cursor-pointer" 
+                    @click="handleOpenFile(file)"
+                  >
+                    {{ file.originalFileName }}
+                  </span>
                 </div>
               </div>
               <div v-else class="text-sm text-gray-500">无上传文件</div>
@@ -157,6 +162,7 @@ import Dialog from './ui/SimpleDialog.vue';
 import DialogContent from './ui/SimpleDialogContent.vue';
 import Textarea from './ui/Textarea.vue';
 import { applicationsApi } from '../api';
+import apiClient from '../api/client';
 
 const props = defineProps<{
   application: Application;
@@ -454,6 +460,42 @@ const getStatusBadgeClass = (status: string) => {
 const confirmReview = async () => {
   if (pendingReviewAction.value) {
     await pendingReviewAction.value();
+  }
+};
+
+// 处理文件打开
+const handleOpenFile = async (file: any) => {
+  try {
+    // 使用 apiClient 获取文件，responseType 设为 blob
+    const response = await apiClient.get(`/files/${file.id}`, { 
+      responseType: 'blob' 
+    });
+    
+    // 创建 blob URL
+    const blobUrl = URL.createObjectURL(response.data);
+    
+    // 根据文件类型判断处理方式
+    if (file.fileType.startsWith('image/') || file.fileType === 'application/pdf') {
+      // 图片或 PDF，在新窗口预览
+      window.open(blobUrl, '_blank');
+    } else {
+      // 其他类型，触发下载
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = file.originalFileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // 释放 blob URL
+      setTimeout(() => {
+        URL.revokeObjectURL(blobUrl);
+      }, 100);
+    }
+  } catch (error: any) {
+    console.error('文件访问失败:', error);
+    // 提示用户文件访问失败或无权限
+    alert('文件访问失败或无权限');
   }
 };
 </script>
